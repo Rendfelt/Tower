@@ -5,8 +5,11 @@ body{font-family:Arial,sans-serif;font-size:18px;margin:16px}
 .wrap{display:flex;gap:32px;align-items:flex-start}
 details.panel{width:280px;margin-bottom:12px}
 details.log-panel{width:800px}
+.logfilters{display:flex;gap:8px;margin:0 0 8px 0}
+.logfilters select{font-size:14px;padding:4px}
 .logbox{height:220px;overflow-y:auto;border:1px solid #ccc;background:#fafafa;padding:8px;font-size:14px}
 .logitem{border-bottom:1px solid #e0e0e0;padding:4px 0}
+.logempty{color:#777}
 .logtime{color:#777;margin-right:6px}
 details.panel summary{cursor:pointer;font-weight:bold;margin:12px 0}
 details.panel[open] summary{margin-bottom:8px}
@@ -35,7 +38,7 @@ details.panel[open] summary{margin-bottom:8px}
 <input id="imp" type=file accept=".json" hidden></p>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div>
-<div id=eventHint class=event-hint></div><div id=field></div><details class="panel log-panel" open><summary>Лог</summary><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div id=field></div><details class="panel log-panel" open><summary>Лог</summary><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
@@ -70,9 +73,30 @@ function addLog(text){
  save();
  renderLog();
 }
+function renderLogFilters(){
+ if(!window.logPlayerFilter||!window.logRoleFilter)return;
+ const playerValue=logPlayerFilter.value;
+ const roleValue=logRoleFilter.value;
+ logPlayerFilter.innerHTML='<option value="">Все игроки</option>'+people.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
+ logRoleFilter.innerHTML='<option value="">Все роли</option>'+roles.map(r=>`<option value="${esc(r.name)}">${esc(r.name)}</option>`).join("");
+ logPlayerFilter.value=people.some(p=>p.name===playerValue)?playerValue:"";
+ logRoleFilter.value=roles.some(r=>r.name===roleValue)?roleValue:"";
+}
+function logMatchesFilters(log){
+ const text=(log.text||"").toLowerCase();
+ const player=(window.logPlayerFilter?.value||"").toLowerCase();
+ const role=(window.logRoleFilter?.value||"").toLowerCase();
+ if(player&&!text.includes(player))return false;
+ if(role&&!text.includes(role))return false;
+ return true;
+}
 function renderLog(){
  if(!window.loglist)return;
- loglist.innerHTML=logs.map(l=>`<div class="logitem"><span class="logtime">${esc(l.time)}</span>${esc(l.text)}</div>`).join("");
+ renderLogFilters();
+ const visibleLogs=logs.filter(logMatchesFilters);
+ loglist.innerHTML=visibleLogs.length
+   ?visibleLogs.map(l=>`<div class="logitem"><span class="logtime">${esc(l.time)}</span>${esc(l.text)}</div>`).join("")
+   :'<div class="logempty">Нет событий</div>';
  loglist.scrollTop=loglist.scrollHeight;
 }
 (function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1}catch{}}normalizePeople();})();
