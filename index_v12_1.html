@@ -11,6 +11,8 @@ details.log-panel{width:800px}
 .logitem{border-bottom:1px solid #e0e0e0;padding:4px 0}
 .logempty{color:#777}
 .logtime{color:#777;margin-right:6px}
+.log-player{color:#135bd8;font-weight:bold}
+.log-role{color:#0b7d35;font-weight:bold}
 details.panel summary{cursor:pointer;font-weight:bold;margin:12px 0}
 details.panel[open] summary{margin-bottom:8px}
 #field{width:800px;height:800px;border:1px solid #666;position:relative;overflow:hidden;touch-action:none}
@@ -18,8 +20,11 @@ details.panel[open] summary{margin-bottom:8px}
 .drop{display:none;position:absolute;left:8px;top:34px;background:#fff;border:1px solid #999;padding:8px;z-index:10}
 .drop label{display:block}
 .card{position:absolute;min-width:120px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:8px;box-sizing:border-box;touch-action:none;user-select:none}
+.card.dead{background:#eee;border-color:#777;color:#555}
 .card.nomination-source{background:#fff2b8;border-color:#b38b00}
 .card.nomination-target{cursor:pointer;box-shadow:0 0 0 2px rgba(11,107,47,.35)}
+.card.vote-target{background:#ffe0e0;border-color:#a94444}
+.card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
 .event-hint{width:800px;box-sizing:border-box;margin:8px 0;padding:8px;border:1px solid #d0c27a;background:#fff7cf;display:none}
 .card b{display:block;border-bottom:1px solid #999;margin-bottom:4px}
 .role-confirmed{font-weight:bold;color:#0b6b2f}
@@ -42,11 +47,11 @@ details.panel[open] summary{margin-bottom:8px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,nominationSourceId=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,nominationSourceId=null,votingTargetId=null;
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
-function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
+function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
 function roleIsCrossed(person,id){
@@ -82,6 +87,18 @@ function renderLogFilters(){
  logPlayerFilter.value=people.some(p=>p.name===playerValue)?playerValue:"";
  logRoleFilter.value=roles.some(r=>r.name===roleValue)?roleValue:"";
 }
+function highlightLogText(text){
+ let html=esc(text);
+ people.forEach(p=>{
+   if(!p.name)return;
+   html=html.split(esc(p.name)).join(`<span class="log-player">${esc(p.name)}</span>`);
+ });
+ roles.forEach(r=>{
+   if(!r.name)return;
+   html=html.split(esc(r.name)).join(`<span class="log-role">${esc(r.name)}</span>`);
+ });
+ return html;
+}
 function logMatchesFilters(log){
  const text=(log.text||"").toLowerCase();
  const player=(window.logPlayerFilter?.value||"").toLowerCase();
@@ -95,9 +112,16 @@ function renderLog(){
  renderLogFilters();
  const visibleLogs=logs.filter(logMatchesFilters);
  loglist.innerHTML=visibleLogs.length
-   ?visibleLogs.map(l=>`<div class="logitem"><span class="logtime">${esc(l.time)}</span>${esc(l.text)}</div>`).join("")
+   ?visibleLogs.map(l=>`<div class="logitem"><span class="logtime">${esc(l.time)}</span>${highlightLogText(l.text)}</div>`).join("")
    :'<div class="logempty">Нет событий</div>';
  loglist.scrollTop=loglist.scrollHeight;
+}
+function filterLogByPlayer(person){
+ if(!window.logPlayerFilter||!window.logRoleFilter)return;
+ renderLogFilters();
+ logPlayerFilter.value=person.name;
+ logRoleFilter.value="";
+ renderLog();
 }
 (function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1}catch{}}normalizePeople();})();
 async function exportJson(){
@@ -124,13 +148,20 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;normalizePeople();save();render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;nominationSourceId=null;save();render();}
-function addPerson(){let n=pname.value.trim();if(!n)return;people.push({id:pid++,name:n,roles:[],confirmedRoles:[],x:20+people.length*140,y:20});pname.value="";save();render();}
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;nominationSourceId=null;votingTargetId=null;save();render();}
+function addPerson(){let n=pname.value.trim();if(!n)return;people.push({id:pid++,name:n,roles:[],confirmedRoles:[],dead:false,x:20+people.length*140,y:20});pname.value="";save();render();}
 function addRole(){let n=rname.value.trim();if(!n)return;roles.push({id:rid++,name:n});rname.value="";save();render();}
 function deletePerson(person){
  if(!confirm(`Удалить игрока "${person.name}"?`))return;
  people=people.filter(p=>p.id!==person.id);
  if(nominationSourceId===person.id)nominationSourceId=null;
+ if(votingTargetId===person.id)votingTargetId=null;
+ save();
+ render();
+}
+function playerTitle(person){return `${person.dead?"☠ ":""}${esc(person.name)}`;}
+function toggleDead(person){
+ person.dead=!person.dead;
  save();
  render();
 }
@@ -159,12 +190,18 @@ function removeConfirmedRole(person,roleId){
 function playerName(id){return people.find(p=>p.id===id)?.name||"?";}
 function updateEventHint(){
  if(!window.eventHint)return;
+ if(votingTargetId){
+   eventHint.style.display="block";
+   eventHint.innerHTML=`Голосование за ${esc(playerName(votingTargetId))}: нажмите на карточку голосующего <button onclick="cancelVoting()">Завершить</button>`;
+   return;
+ }
  if(!nominationSourceId){eventHint.style.display="none";eventHint.innerHTML="";return;}
  eventHint.style.display="block";
  eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует: нажмите на карточку цели на поле <button onclick="cancelNomination()">Отмена</button>`;
 }
 function startNomination(person){
  nominationSourceId=person.id;
+ votingTargetId=null;
  closeAllMenus();
  render();
 }
@@ -176,7 +213,17 @@ function finishNomination(target){
  if(!nominationSourceId || target.id===nominationSourceId)return;
  const source=playerName(nominationSourceId);
  addLog(`${source} номинирует ${target.name}`);
+ votingTargetId=target.id;
  nominationSourceId=null;
+ render();
+}
+function cancelVoting(){
+ votingTargetId=null;
+ render();
+}
+function voteForNominee(voter){
+ if(!votingTargetId)return;
+ addLog(`${voter.name} голосует за ${playerName(votingTargetId)}`);
  render();
 }
 
@@ -185,24 +232,33 @@ plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEvent
 roles.forEach(r=>{let li=document.createElement("li");li.innerHTML=roleListHtml(r);rlist.append(li);});
 people.forEach(p=>{
  let box=document.createElement("div");box.className="person";
- box.innerHTML=`<b>${esc(p.name)}</b><div>${p.roles.map(id=>roleHtml(p,id)).join("<br>")||"<i>нет ролей</i>"}</div>`;
+ box.innerHTML=`<b>${playerTitle(p)}</b><div>${p.roles.map(id=>roleHtml(p,id)).join("<br>")||"<i>нет ролей</i>"}</div>`;
  plist.append(box);
 
  let card=document.createElement("div");
  card.className="card";
+ if(p.dead)card.classList.add("dead");
  if(p.id===nominationSourceId)card.classList.add("nomination-source");
  else if(nominationSourceId)card.classList.add("nomination-target");
+ if(p.id===votingTargetId)card.classList.add("vote-target");
+ else if(votingTargetId)card.classList.add("vote-voter");
  card.style.left=p.x+"px";card.style.top=p.y+"px";
- card.innerHTML="<b>"+esc(p.name)+"</b>"+p.roles.map(id=>roleHtml(p,id)).join("<br>");
+ card.innerHTML="<b>"+playerTitle(p)+"</b>"+p.roles.map(id=>roleHtml(p,id)).join("<br>");
 
  let menu=document.createElement("div");
  menu.className="menu";
  let roleBtn=document.createElement("button");
  roleBtn.textContent="Назначить роли";
  roleBtn.onclick=()=>openRoleEditor(p,menu);
+ let filterBtn=document.createElement("button");
+ filterBtn.textContent="Фильтровать";
+ filterBtn.onclick=()=>filterLogByPlayer(p);
  let nominateBtn=document.createElement("button");
  nominateBtn.textContent="Номинировать";
  nominateBtn.onclick=()=>startNomination(p);
+ let deadBtn=document.createElement("button");
+ deadBtn.textContent=p.dead?"Сделать живым":"Сделать мертвым";
+ deadBtn.onclick=()=>toggleDead(p);
  let confirmBtn=document.createElement("button");
  confirmBtn.textContent="Добавить подтвержденную роль";
  confirmBtn.onclick=()=>openConfirmedRoleEditor(p,menu,"add");
@@ -212,7 +268,7 @@ people.forEach(p=>{
  let deleteBtn=document.createElement("button");
  deleteBtn.textContent="Удалить игрока";
  deleteBtn.onclick=()=>deletePerson(p);
- menu.append(roleBtn,nominateBtn,confirmBtn,unconfirmBtn,deleteBtn);
+ menu.append(roleBtn,filterBtn,nominateBtn,deadBtn,confirmBtn,unconfirmBtn,deleteBtn);
  card.append(menu);
 
  setupCardInteractions(card,menu,p);
@@ -288,6 +344,11 @@ function setupCardInteractions(card,menu,p){
    if(nominationSourceId){
      e.preventDefault();
      finishNomination(p);
+     return;
+   }
+   if(votingTargetId){
+     e.preventDefault();
+     voteForNominee(p);
      return;
    }
    e.preventDefault();
