@@ -1,41 +1,48 @@
 ﻿<!doctype html><html lang="ru"><meta charset="utf-8">
 <title>v11</title>
 <style>
-body{font-family:Arial,sans-serif;font-size:18px;margin:16px}
+body{font-family:Arial,sans-serif;font-size:22px;margin:16px;line-height:1.35}
 .wrap{display:flex;gap:32px;align-items:flex-start}
 details.panel{width:280px;margin-bottom:12px}
 details.log-panel{width:800px}
 .logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 8px 0}
-.logcomposer input,.logcomposer select{font-size:14px;padding:4px}
+.logcomposer input,.logcomposer select,.logcomposer button{font-size:20px;padding:8px}
 .logfilters{display:flex;gap:8px;margin:0 0 8px 0}
-.logfilters select{font-size:14px;padding:4px}
-.logbox{height:220px;overflow-y:auto;border:1px solid currentColor;padding:8px;font-size:14px}
+.logfilters select{font-size:20px;padding:8px}
+.logbox{height:260px;overflow-y:auto;border:1px solid currentColor;padding:10px;font-size:20px}
 .logitem{padding:4px 0}
 .logtime{margin-right:6px}
 .log-player{color:#135bd8;font-weight:bold}
 .log-role{color:#0b7d35;font-weight:bold}
 details.panel summary{cursor:pointer;font-weight:bold;margin:12px 0}
 details.panel[open] summary{margin-bottom:8px}
-#field{width:800px;height:800px;border:1px solid #666;position:relative;overflow:hidden;touch-action:none}
-.person{border:1px solid #ccc;border-radius:6px;padding:8px;margin:8px 0;position:relative;width:260px}
+#field{width:800px;height:800px;border:1px solid #666;position:relative;overflow:hidden;touch-action:auto;box-sizing:border-box}
+.person{border:1px solid #ccc;border-radius:6px;padding:10px;margin:10px 0;position:relative;width:260px}
 .drop{display:none;position:absolute;left:8px;top:34px;background:#fff;border:1px solid #999;padding:8px;z-index:10}
 .drop label{display:block}
-.card{position:absolute;min-width:120px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:8px;box-sizing:border-box;touch-action:none;user-select:none}
+.card{position:absolute;min-width:140px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:10px;box-sizing:border-box;touch-action:none;user-select:none;font-size:20px}
 .card.dead{background:#eee;border-color:#777;color:#555}
 .card.nomination-source{background:#fff2b8;border-color:#b38b00}
 .card.nomination-target{cursor:pointer;box-shadow:0 0 0 2px rgba(11,107,47,.35)}
 .card.vote-target{background:#ffe0e0;border-color:#a94444}
 .card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
 .card.vote-done{cursor:default;opacity:.75}
-.vote-count{font-size:14px;font-weight:bold;color:#a94444;margin-bottom:4px}
+.vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:800px;box-sizing:border-box;margin:8px 0;padding:8px;border:1px solid #d0c27a;background:#fff7cf;display:none}
 .card b{display:block;border-bottom:1px solid #999;margin-bottom:4px}
 .role-confirmed{font-weight:bold;color:#0b6b2f}
 .role-crossed{text-decoration:line-through;color:#777}
-.role-owners{font-size:14px;color:#555;margin:2px 0 8px 16px}
+.role-owners{font-size:18px;color:#555;margin:2px 0 8px 16px}
 .menu{display:none;position:absolute;background:#fff;border:1px solid #777;border-radius:6px;padding:6px;z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.menu button{display:block;width:100%;margin:4px 0}
-.menu label{display:block;margin:6px 0;}
+.menu button{display:block;width:100%;margin:6px 0;font-size:20px;padding:8px}
+.menu label{display:block;margin:8px 0;}
+input,button,select{font-size:20px}
+@media(max-width:600px){
+ .wrap{display:block}
+ details.panel{width:800px}
+ .logcomposer{grid-template-columns:1fr}
+ .logfilters{display:grid;grid-template-columns:1fr 1fr}
+}
 </style><body>
 
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
@@ -50,7 +57,8 @@ details.panel[open] summary{margin-bottom:8px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,nominationSourceId=null,votingTargetId=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,nominationSourceId=null,votingTargetId=null,votingLogId=null;
+const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
@@ -88,10 +96,12 @@ function addCustomLog(text,playerIds,roleIds){
  renderLog();
 }
 function addNominationLog(sourceId,targetId){
- logs.push({type:"nomination",time:logTime(),sourceId,targetId,votes:[]});
+ const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[]};
+ logs.push(log);
  if(logs.length>500)logs=logs.slice(-500);
  save();
  renderLog();
+ return log;
 }
 function logText(log){
  if(log.type==="custom")return log.text||"";
@@ -113,26 +123,39 @@ function logRoles(log){
  return roles.filter(r=>logText(log).includes(r.name)).map(r=>r.id);
 }
 function renderComposerOptions(){
- if(!window.logInsertPlayer||!window.logInsertRole)return;
- logInsertPlayer.innerHTML='<option value="">+ игрок</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
- logInsertRole.innerHTML='<option value="">+ роль</option>'+roles.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join("");
+ const playerSelect=$("logInsertPlayer");
+ const roleSelect=$("logInsertRole");
+ if(!playerSelect||!roleSelect)return;
+ playerSelect.innerHTML='<option value="">+ игрок</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+ roleSelect.innerHTML='<option value="">+ роль</option>'+roles.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join("");
 }
 function renderLogFilters(){
- if(!window.logPlayerFilter||!window.logRoleFilter)return;
- const playerValue=logPlayerFilter.value;
- const roleValue=logRoleFilter.value;
- logPlayerFilter.innerHTML='<option value="">Все игроки</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
- logRoleFilter.innerHTML='<option value="">Все роли</option>'+roles.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join("");
- logPlayerFilter.value=people.some(p=>String(p.id)===playerValue)?playerValue:"";
- logRoleFilter.value=roles.some(r=>String(r.id)===roleValue)?roleValue:"";
+ const playerFilter=$("logPlayerFilter");
+ const roleFilter=$("logRoleFilter");
+ if(!playerFilter||!roleFilter)return;
+ const playerValue=playerFilter.value;
+ const roleValue=roleFilter.value;
+ playerFilter.innerHTML='<option value="">Все игроки</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+ roleFilter.innerHTML='<option value="">Все роли</option>'+roles.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join("");
+ playerFilter.value=people.some(p=>String(p.id)===playerValue)?playerValue:"";
+ roleFilter.value=roles.some(r=>String(r.id)===roleValue)?roleValue:"";
 }
 function highlightLogText(text){
  let html=esc(text);
- const boundary='[\\p{L}\\p{N}_]';
+ const isWordChar=ch=>!!ch&&/[A-Za-zА-Яа-яЁё0-9_]/.test(ch);
  const replaceEntity=(source,name,cls)=>{
    const value=esc(name);
-   const pattern=new RegExp(`(?<!${boundary})${value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}(?!${boundary})`,"gu");
-   return source.replace(pattern,`<span class="${cls}">${value}</span>`);
+   let out="",pos=0;
+   while(pos<source.length){
+     const idx=source.indexOf(value,pos);
+     if(idx<0){out+=source.slice(pos);break;}
+     const before=source[idx-1]||"";
+     const after=source[idx+value.length]||"";
+     out+=source.slice(pos,idx);
+     out+=(!isWordChar(before)&&!isWordChar(after))?`<span class="${cls}">${value}</span>`:value;
+     pos=idx+value.length;
+   }
+   return out;
  };
  const playerMarks=[];
  people.forEach((p,i)=>{
@@ -140,7 +163,7 @@ function highlightLogText(text){
    const mark=`@@PLAYER_${i}@@`;
    playerMarks.push([mark,`<span class="log-player">${esc(p.name)}</span>`]);
    html=replaceEntity(html,p.name,`PLAYER_MARK_${i}`);
-   html=html.replaceAll(`<span class="PLAYER_MARK_${i}">${esc(p.name)}</span>`,mark);
+   html=html.split(`<span class="PLAYER_MARK_${i}">${esc(p.name)}</span>`).join(mark);
  });
  roles.forEach(r=>{
    if(!r.name)return;
@@ -151,27 +174,31 @@ function highlightLogText(text){
 }
 function logMatchesFilters(log){
  const text=logText(log).toLowerCase();
- const player=window.logPlayerFilter?.value||"";
- const role=window.logRoleFilter?.value||"";
+ const player=$("logPlayerFilter")?.value||"";
+ const role=$("logRoleFilter")?.value||"";
  if(player&&!logPlayers(log).includes(+player)&&!text.includes(player.toLowerCase()))return false;
  if(role&&!logRoles(log).includes(+role)&&!text.includes(role.toLowerCase()))return false;
  return true;
 }
 function renderLog(){
- if(!window.loglist)return;
+ const list=$("loglist");
+ if(!list)return;
  renderComposerOptions();
  renderLogFilters();
  const visibleLogs=logs.filter(logMatchesFilters);
- loglist.innerHTML=visibleLogs.length
+ list.innerHTML=visibleLogs.length
    ?visibleLogs.map(l=>`<div class="logitem"><span class="logtime">${esc(l.time)}</span>${highlightLogText(logText(l))}</div>`).join("")
    :'<div class="logempty">Нет событий</div>';
- loglist.scrollTop=loglist.scrollHeight;
+ list.scrollTop=list.scrollHeight;
 }
 function filterLogByPlayer(person){
- if(!window.logPlayerFilter||!window.logRoleFilter)return;
+ const playerFilter=$("logPlayerFilter");
+ const roleFilter=$("logRoleFilter");
+ if(!playerFilter||!roleFilter)return;
  renderLogFilters();
- logPlayerFilter.value=person.id;
- logRoleFilter.value="";
+ playerFilter.value=person.id;
+ roleFilter.value="";
+ closeAllMenus();
  renderLog();
 }
 function insertAtCursor(input,text){
@@ -182,37 +209,45 @@ function insertAtCursor(input,text){
  input.selectionStart=input.selectionEnd=start+text.length;
 }
 function currentCustomMeta(){
- return logTextInput._meta||(logTextInput._meta={playerIds:[],roleIds:[]});
+ const input=$("logTextInput");
+ if(!input)return {playerIds:[],roleIds:[]};
+ return input._meta||(input._meta={playerIds:[],roleIds:[]});
 }
 function insertLogPlayer(){
- if(!logInsertPlayer.value)return;
- const id=+logInsertPlayer.value;
+ const select=$("logInsertPlayer");
+ const input=$("logTextInput");
+ if(!select||!input||!select.value)return;
+ const id=+select.value;
  const person=people.find(p=>p.id===id);
  if(person){
-   insertAtCursor(logTextInput,person.name);
+   insertAtCursor(input,person.name);
    const meta=currentCustomMeta();
    if(!meta.playerIds.includes(id))meta.playerIds.push(id);
  }
- logInsertPlayer.value="";
+ select.value="";
 }
 function insertLogRole(){
- if(!logInsertRole.value)return;
- const id=+logInsertRole.value;
+ const select=$("logInsertRole");
+ const input=$("logTextInput");
+ if(!select||!input||!select.value)return;
+ const id=+select.value;
  const role=roles.find(r=>r.id===id);
  if(role){
-   insertAtCursor(logTextInput,role.name);
+   insertAtCursor(input,role.name);
    const meta=currentCustomMeta();
    if(!meta.roleIds.includes(id))meta.roleIds.push(id);
  }
- logInsertRole.value="";
+ select.value="";
 }
 function addCustomLogEvent(){
- const text=logTextInput.value.trim();
+ const input=$("logTextInput");
+ if(!input)return;
+ const text=input.value.trim();
  if(!text)return;
  const meta=currentCustomMeta();
  addCustomLog(text,[...meta.playerIds],[...meta.roleIds]);
- logTextInput.value="";
- logTextInput._meta={playerIds:[],roleIds:[]};
+ input.value="";
+ input._meta={playerIds:[],roleIds:[]};
 }
 (function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1}catch{}}normalizePeople();})();
 async function exportJson(){
@@ -239,14 +274,21 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;normalizePeople();save();render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;nominationSourceId=null;votingTargetId=null;save();render();}
-function addPerson(){let n=pname.value.trim();if(!n)return;people.push({id:pid++,name:n,roles:[],confirmedRoles:[],dead:false,x:20+people.length*140,y:20});pname.value="";save();render();}
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;nominationSourceId=null;votingTargetId=null;votingLogId=null;save();render();}
+function nextPersonPosition(){
+ const gap=12,cardW=132,cardH=72;
+ const width=field?.clientWidth||800;
+ const cols=Math.max(1,Math.floor((width-gap)/(cardW+gap)));
+ const i=people.length;
+ return {x:gap+(i%cols)*(cardW+gap),y:gap+Math.floor(i/cols)*(cardH+gap)};
+}
+function addPerson(){let n=pname.value.trim();if(!n)return;let pos=nextPersonPosition();people.push({id:pid++,name:n,roles:[],confirmedRoles:[],dead:false,x:pos.x,y:pos.y});pname.value="";save();render();}
 function addRole(){let n=rname.value.trim();if(!n)return;roles.push({id:rid++,name:n});rname.value="";save();render();}
 function deletePerson(person){
  if(!confirm(`Удалить игрока "${person.name}"?`))return;
  people=people.filter(p=>p.id!==person.id);
  if(nominationSourceId===person.id)nominationSourceId=null;
- if(votingTargetId===person.id)votingTargetId=null;
+ if(votingTargetId===person.id){votingTargetId=null;votingLogId=null;}
  save();
  render();
 }
@@ -262,8 +304,23 @@ function closeAllMenus(except){
 function openCardMenu(card,menu){
  closeAllMenus(menu);
  menu.style.display="block";
- menu.style.left="0";
+ menu.style.left="0px";
  menu.style.top=(card.offsetHeight+4)+"px";
+ requestAnimationFrame(()=>{
+   const fieldBox=field.getBoundingClientRect();
+   const cardBox=card.getBoundingClientRect();
+   const menuBox=menu.getBoundingClientRect();
+   let left=0;
+   let top=card.offsetHeight+4;
+   const overflowRight=menuBox.right-fieldBox.right;
+   if(overflowRight>0)left-=overflowRight+4;
+   const overflowBottom=menuBox.bottom-fieldBox.bottom;
+   if(overflowBottom>0)top=-(menu.offsetHeight+4);
+   if(cardBox.left+left<fieldBox.left)left+=fieldBox.left-(cardBox.left+left)+4;
+   if(cardBox.top+top<fieldBox.top)top=4;
+   menu.style.left=left+"px";
+   menu.style.top=top+"px";
+ });
 }
 function setConfirmedRole(person,roleId){
  people.forEach(p=>{p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>id!==roleId);});
@@ -280,6 +337,10 @@ function removeConfirmedRole(person,roleId){
 }
 function playerName(id){return people.find(p=>p.id===id)?.name||"?";}
 function currentVotingLog(){
+ if(votingLogId){
+   const byId=logs.find(l=>l.id===votingLogId);
+   if(byId)return byId;
+ }
  return votingTargetId?[...logs].reverse().find(l=>l.type==="nomination"&&l.targetId===votingTargetId):null;
 }
 function currentVotes(){
@@ -299,6 +360,7 @@ function updateEventHint(){
 function startNomination(person){
  nominationSourceId=person.id;
  votingTargetId=null;
+ votingLogId=null;
  closeAllMenus();
  render();
 }
@@ -308,13 +370,15 @@ function cancelNomination(){
 }
 function finishNomination(target){
  if(!nominationSourceId || target.id===nominationSourceId)return;
- addNominationLog(nominationSourceId,target.id);
+ const log=addNominationLog(nominationSourceId,target.id);
  votingTargetId=target.id;
+ votingLogId=log.id;
  nominationSourceId=null;
  render();
 }
 function cancelVoting(){
  votingTargetId=null;
+ votingLogId=null;
  render();
 }
 function voteForNominee(voter){
@@ -349,6 +413,8 @@ people.forEach(p=>{
  if(p.id===votingTargetId)card.classList.add("vote-target");
  else if(votingTargetId)card.classList.add("vote-voter");
  if(votes.includes(p.id))card.classList.add("vote-done");
+ p.x=Math.min(Math.max(0,p.x||0),Math.max(0,field.clientWidth-120));
+ p.y=Math.min(Math.max(0,p.y||0),Math.max(0,field.clientHeight-60));
  card.style.left=p.x+"px";card.style.top=p.y+"px";
  card.innerHTML="<b>"+playerTitle(p)+(votes.includes(p.id)?" ✋":"")+"</b>"
    +(p.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"")
@@ -503,7 +569,7 @@ function setupCardInteractions(card,menu,p){
 }
 
 document.addEventListener("pointerdown",e=>{
- if(!e.target.closest(".card"))closeAllMenus();
+ if(!e.target.closest(".menu"))closeAllMenus();
 });
 render();
 </script></body></html>
