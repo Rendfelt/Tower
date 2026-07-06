@@ -4,7 +4,7 @@
 body{font-family:Arial,sans-serif;font-size:22px;margin:16px;line-height:1.35}
 .wrap{display:flex;gap:32px;align-items:flex-start}
 details.panel{width:280px;margin-bottom:12px}
-details.log-panel{width:800px}
+details.log-panel{width:1200px}
 .logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 8px 0}
 .logcomposer input,.logcomposer select,.logcomposer button{font-size:20px;padding:8px}
 .logfilters{display:flex;gap:8px;margin:0 0 8px 0}
@@ -16,7 +16,7 @@ details.log-panel{width:800px}
 .log-role{color:#0b7d35;font-weight:bold}
 details.panel summary{cursor:pointer;font-weight:bold;margin:12px 0}
 details.panel[open] summary{margin-bottom:8px}
-#field{width:800px;height:800px;border:1px solid #666;position:relative;overflow:hidden;touch-action:auto;box-sizing:border-box}
+#field{width:1200px;height:1200px;border:1px solid #666;position:relative;overflow:hidden;touch-action:auto;box-sizing:border-box}
 .person{border:1px solid #ccc;border-radius:6px;padding:10px;margin:10px 0;position:relative;width:260px}
 .drop{display:none;position:absolute;left:8px;top:34px;background:#fff;border:1px solid #999;padding:8px;z-index:10}
 .drop label{display:block}
@@ -28,7 +28,7 @@ details.panel[open] summary{margin-bottom:8px}
 .card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
 .card.vote-done{cursor:default;opacity:.75}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
-.event-hint{width:800px;box-sizing:border-box;margin:8px 0;padding:8px;border:1px solid #d0c27a;background:#fff7cf;display:none}
+.event-hint{width:1200px;box-sizing:border-box;margin:8px 0;padding:8px;border:1px solid #d0c27a;background:#fff7cf;display:none}
 .card b{display:block;border-bottom:1px solid #999;margin-bottom:4px}
 .role-confirmed{font-weight:bold;color:#0b6b2f}
 .role-crossed{text-decoration:line-through;color:#777}
@@ -39,7 +39,7 @@ details.panel[open] summary{margin-bottom:8px}
 input,button,select{font-size:20px}
 @media(max-width:600px){
  .wrap{display:block}
- details.panel{width:800px}
+ details.panel{width:1200px}
  .logcomposer{grid-template-columns:1fr}
  .logfilters{display:grid;grid-template-columns:1fr 1fr}
 }
@@ -573,6 +573,7 @@ document.addEventListener("pointerdown",e=>{
 });
 render();
 </script></body></html>
+
 
 
 
