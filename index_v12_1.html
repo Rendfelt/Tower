@@ -5,12 +5,13 @@ body{font-family:Arial,sans-serif;font-size:18px;margin:16px}
 .wrap{display:flex;gap:32px;align-items:flex-start}
 details.panel{width:280px;margin-bottom:12px}
 details.log-panel{width:800px}
+.logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 8px 0}
+.logcomposer input,.logcomposer select{font-size:14px;padding:4px}
 .logfilters{display:flex;gap:8px;margin:0 0 8px 0}
 .logfilters select{font-size:14px;padding:4px}
-.logbox{height:220px;overflow-y:auto;border:1px solid #ccc;background:#fafafa;padding:8px;font-size:14px}
-.logitem{border-bottom:1px solid #e0e0e0;padding:4px 0}
-.logempty{color:#777}
-.logtime{color:#777;margin-right:6px}
+.logbox{height:220px;overflow-y:auto;border:1px solid currentColor;padding:8px;font-size:14px}
+.logitem{padding:4px 0}
+.logtime{margin-right:6px}
 .log-player{color:#135bd8;font-weight:bold}
 .log-role{color:#0b7d35;font-weight:bold}
 details.panel summary{cursor:pointer;font-weight:bold;margin:12px 0}
@@ -25,6 +26,8 @@ details.panel[open] summary{margin-bottom:8px}
 .card.nomination-target{cursor:pointer;box-shadow:0 0 0 2px rgba(11,107,47,.35)}
 .card.vote-target{background:#ffe0e0;border-color:#a94444}
 .card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
+.card.vote-done{cursor:default;opacity:.75}
+.vote-count{font-size:14px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:800px;box-sizing:border-box;margin:8px 0;padding:8px;border:1px solid #d0c27a;background:#fff7cf;display:none}
 .card b{display:block;border-bottom:1px solid #999;margin-bottom:4px}
 .role-confirmed{font-weight:bold;color:#0b6b2f}
@@ -43,7 +46,7 @@ details.panel[open] summary{margin-bottom:8px}
 <input id="imp" type=file accept=".json" hidden></p>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div>
-<div id=eventHint class=event-hint></div><div id=field></div><details class="panel log-panel" open><summary>Лог</summary><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div id=field></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
@@ -78,50 +81,138 @@ function addLog(text){
  save();
  renderLog();
 }
+function addCustomLog(text,playerIds,roleIds){
+ logs.push({type:"custom",time:logTime(),text,playerIds,roleIds});
+ if(logs.length>500)logs=logs.slice(-500);
+ save();
+ renderLog();
+}
+function addNominationLog(sourceId,targetId){
+ logs.push({type:"nomination",time:logTime(),sourceId,targetId,votes:[]});
+ if(logs.length>500)logs=logs.slice(-500);
+ save();
+ renderLog();
+}
+function logText(log){
+ if(log.type==="custom")return log.text||"";
+ if(log.type==="nomination"){
+   const source=playerName(log.sourceId);
+   const target=playerName(log.targetId);
+   const votes=(log.votes||[]).map(playerName).join(", ");
+   return `${source} номинирует ${target}.${votes?` За ${target} голосуют: ${votes}`:""}`;
+ }
+ return log.text||"";
+}
+function logPlayers(log){
+ if(log.type==="custom")return log.playerIds||[];
+ if(log.type==="nomination")return [log.sourceId,log.targetId,...(log.votes||[])].filter(id=>id!=null);
+ return people.filter(p=>(log.text||"").includes(p.name)).map(p=>p.id);
+}
+function logRoles(log){
+ if(log.type==="custom")return log.roleIds||[];
+ return roles.filter(r=>logText(log).includes(r.name)).map(r=>r.id);
+}
+function renderComposerOptions(){
+ if(!window.logInsertPlayer||!window.logInsertRole)return;
+ logInsertPlayer.innerHTML='<option value="">+ игрок</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+ logInsertRole.innerHTML='<option value="">+ роль</option>'+roles.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join("");
+}
 function renderLogFilters(){
  if(!window.logPlayerFilter||!window.logRoleFilter)return;
  const playerValue=logPlayerFilter.value;
  const roleValue=logRoleFilter.value;
- logPlayerFilter.innerHTML='<option value="">Все игроки</option>'+people.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join("");
- logRoleFilter.innerHTML='<option value="">Все роли</option>'+roles.map(r=>`<option value="${esc(r.name)}">${esc(r.name)}</option>`).join("");
- logPlayerFilter.value=people.some(p=>p.name===playerValue)?playerValue:"";
- logRoleFilter.value=roles.some(r=>r.name===roleValue)?roleValue:"";
+ logPlayerFilter.innerHTML='<option value="">Все игроки</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+ logRoleFilter.innerHTML='<option value="">Все роли</option>'+roles.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join("");
+ logPlayerFilter.value=people.some(p=>String(p.id)===playerValue)?playerValue:"";
+ logRoleFilter.value=roles.some(r=>String(r.id)===roleValue)?roleValue:"";
 }
 function highlightLogText(text){
  let html=esc(text);
- people.forEach(p=>{
+ const boundary='[\\p{L}\\p{N}_]';
+ const replaceEntity=(source,name,cls)=>{
+   const value=esc(name);
+   const pattern=new RegExp(`(?<!${boundary})${value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}(?!${boundary})`,"gu");
+   return source.replace(pattern,`<span class="${cls}">${value}</span>`);
+ };
+ const playerMarks=[];
+ people.forEach((p,i)=>{
    if(!p.name)return;
-   html=html.split(esc(p.name)).join(`<span class="log-player">${esc(p.name)}</span>`);
+   const mark=`@@PLAYER_${i}@@`;
+   playerMarks.push([mark,`<span class="log-player">${esc(p.name)}</span>`]);
+   html=replaceEntity(html,p.name,`PLAYER_MARK_${i}`);
+   html=html.replaceAll(`<span class="PLAYER_MARK_${i}">${esc(p.name)}</span>`,mark);
  });
  roles.forEach(r=>{
    if(!r.name)return;
-   html=html.split(esc(r.name)).join(`<span class="log-role">${esc(r.name)}</span>`);
+   html=replaceEntity(html,r.name,"log-role");
  });
+ playerMarks.forEach(([mark,value])=>{html=html.split(mark).join(value);});
  return html;
 }
 function logMatchesFilters(log){
- const text=(log.text||"").toLowerCase();
- const player=(window.logPlayerFilter?.value||"").toLowerCase();
- const role=(window.logRoleFilter?.value||"").toLowerCase();
- if(player&&!text.includes(player))return false;
- if(role&&!text.includes(role))return false;
+ const text=logText(log).toLowerCase();
+ const player=window.logPlayerFilter?.value||"";
+ const role=window.logRoleFilter?.value||"";
+ if(player&&!logPlayers(log).includes(+player)&&!text.includes(player.toLowerCase()))return false;
+ if(role&&!logRoles(log).includes(+role)&&!text.includes(role.toLowerCase()))return false;
  return true;
 }
 function renderLog(){
  if(!window.loglist)return;
+ renderComposerOptions();
  renderLogFilters();
  const visibleLogs=logs.filter(logMatchesFilters);
  loglist.innerHTML=visibleLogs.length
-   ?visibleLogs.map(l=>`<div class="logitem"><span class="logtime">${esc(l.time)}</span>${highlightLogText(l.text)}</div>`).join("")
+   ?visibleLogs.map(l=>`<div class="logitem"><span class="logtime">${esc(l.time)}</span>${highlightLogText(logText(l))}</div>`).join("")
    :'<div class="logempty">Нет событий</div>';
  loglist.scrollTop=loglist.scrollHeight;
 }
 function filterLogByPlayer(person){
  if(!window.logPlayerFilter||!window.logRoleFilter)return;
  renderLogFilters();
- logPlayerFilter.value=person.name;
+ logPlayerFilter.value=person.id;
  logRoleFilter.value="";
  renderLog();
+}
+function insertAtCursor(input,text){
+ const start=input.selectionStart||0;
+ const end=input.selectionEnd||0;
+ input.value=input.value.slice(0,start)+text+input.value.slice(end);
+ input.focus();
+ input.selectionStart=input.selectionEnd=start+text.length;
+}
+function currentCustomMeta(){
+ return logTextInput._meta||(logTextInput._meta={playerIds:[],roleIds:[]});
+}
+function insertLogPlayer(){
+ if(!logInsertPlayer.value)return;
+ const id=+logInsertPlayer.value;
+ const person=people.find(p=>p.id===id);
+ if(person){
+   insertAtCursor(logTextInput,person.name);
+   const meta=currentCustomMeta();
+   if(!meta.playerIds.includes(id))meta.playerIds.push(id);
+ }
+ logInsertPlayer.value="";
+}
+function insertLogRole(){
+ if(!logInsertRole.value)return;
+ const id=+logInsertRole.value;
+ const role=roles.find(r=>r.id===id);
+ if(role){
+   insertAtCursor(logTextInput,role.name);
+   const meta=currentCustomMeta();
+   if(!meta.roleIds.includes(id))meta.roleIds.push(id);
+ }
+ logInsertRole.value="";
+}
+function addCustomLogEvent(){
+ const text=logTextInput.value.trim();
+ if(!text)return;
+ const meta=currentCustomMeta();
+ addCustomLog(text,[...meta.playerIds],[...meta.roleIds]);
+ logTextInput.value="";
+ logTextInput._meta={playerIds:[],roleIds:[]};
 }
 (function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1}catch{}}normalizePeople();})();
 async function exportJson(){
@@ -188,6 +279,12 @@ function removeConfirmedRole(person,roleId){
  render();
 }
 function playerName(id){return people.find(p=>p.id===id)?.name||"?";}
+function currentVotingLog(){
+ return votingTargetId?[...logs].reverse().find(l=>l.type==="nomination"&&l.targetId===votingTargetId):null;
+}
+function currentVotes(){
+ return currentVotingLog()?.votes||[];
+}
 function updateEventHint(){
  if(!window.eventHint)return;
  if(votingTargetId){
@@ -211,8 +308,7 @@ function cancelNomination(){
 }
 function finishNomination(target){
  if(!nominationSourceId || target.id===nominationSourceId)return;
- const source=playerName(nominationSourceId);
- addLog(`${source} номинирует ${target.name}`);
+ addNominationLog(nominationSourceId,target.id);
  votingTargetId=target.id;
  nominationSourceId=null;
  render();
@@ -223,7 +319,16 @@ function cancelVoting(){
 }
 function voteForNominee(voter){
  if(!votingTargetId)return;
- addLog(`${voter.name} голосует за ${playerName(votingTargetId)}`);
+ const log=currentVotingLog();
+ if(log){
+   log.votes=log.votes||[];
+   if(log.votes.includes(voter.id))log.votes=log.votes.filter(id=>id!==voter.id);
+   else log.votes.push(voter.id);
+   save();
+   renderLog();
+ }else{
+   addLog(`${voter.name} голосует за ${playerName(votingTargetId)}`);
+ }
  render();
 }
 
@@ -231,6 +336,7 @@ function render(){
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 roles.forEach(r=>{let li=document.createElement("li");li.innerHTML=roleListHtml(r);rlist.append(li);});
 people.forEach(p=>{
+ const votes=currentVotes();
  let box=document.createElement("div");box.className="person";
  box.innerHTML=`<b>${playerTitle(p)}</b><div>${p.roles.map(id=>roleHtml(p,id)).join("<br>")||"<i>нет ролей</i>"}</div>`;
  plist.append(box);
@@ -242,8 +348,11 @@ people.forEach(p=>{
  else if(nominationSourceId)card.classList.add("nomination-target");
  if(p.id===votingTargetId)card.classList.add("vote-target");
  else if(votingTargetId)card.classList.add("vote-voter");
+ if(votes.includes(p.id))card.classList.add("vote-done");
  card.style.left=p.x+"px";card.style.top=p.y+"px";
- card.innerHTML="<b>"+playerTitle(p)+"</b>"+p.roles.map(id=>roleHtml(p,id)).join("<br>");
+ card.innerHTML="<b>"+playerTitle(p)+(votes.includes(p.id)?" ✋":"")+"</b>"
+   +(p.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"")
+   +p.roles.map(id=>roleHtml(p,id)).join("<br>");
 
  let menu=document.createElement("div");
  menu.className="menu";
