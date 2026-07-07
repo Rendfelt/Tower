@@ -33,8 +33,8 @@ details.log-panel{width:1000px;margin:14px 20px 0}
 .fixed-events button{font-size:19px;padding:8px 10px}
 .logbox{height:270px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(38,17,62,.98),rgba(15,8,28,.98));color:var(--ink);padding:10px 12px;font-size:20px;box-shadow:inset 0 0 24px rgba(0,0,0,.35)}
 .logitem{padding:6px 0;border-bottom:1px solid rgba(216,200,239,.18)}
-.logitem.fixed-event{color:#ffe36d;font-weight:bold;text-shadow:0 0 10px rgba(255,215,106,.35)}
-.logitem.fixed-event .logtime{color:#ffd76a}
+.logitem.fixed-event{color:#ffd033;font-weight:bold;text-shadow:0 0 12px rgba(255,196,36,.55)}
+.logitem.fixed-event .logtime{color:#ffc424}
 .logitem:last-child{border-bottom:0}
 .logtime{margin-right:6px;color:#bca7df}
 .log-player{color:#d08cff;font-weight:bold}
@@ -268,6 +268,7 @@ function highlightLogText(text){
  return html;
 }
 function logMatchesFilters(log){
+ if(log.type==="day")return true;
  const text=logText(log).toLowerCase();
  const player=$("logPlayerFilter")?.value||"";
  const role=$("logRoleFilter")?.value||"";
