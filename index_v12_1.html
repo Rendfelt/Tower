@@ -44,7 +44,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 #field{width:1000px;height:1000px;border:2px solid #9d6bd5;border-radius:10px;position:relative;overflow:hidden;touch-action:auto;background:#150922;background-image:radial-gradient(ellipse at 50% 42%,rgba(127,58,169,.42) 0%,rgba(64,24,100,.24) 28%,transparent 62%),radial-gradient(ellipse at 50% 110%,rgba(216,177,92,.16),transparent 42%),linear-gradient(180deg,#211039 0%,#150922 52%,#090511 100%);background-size:100% 100%;box-shadow:0 0 0 1px rgba(255,255,255,.1),0 8px 28px rgba(0,0,0,.55),inset 0 0 120px rgba(0,0,0,.68)}
 #field::before{content:"";position:absolute;inset:0;background:url("https://bloodontheclocktower.com/cdn/shop/files/2BloodLogo_2_1.png?v=1758698292&width=2400") center 54%/78% auto no-repeat;opacity:.08;filter:saturate(.95) brightness(.9);mix-blend-mode:screen;pointer-events:none}
 #field::after{content:"";position:absolute;inset:14px;border-radius:8px;background:radial-gradient(circle at 50% 0%,rgba(194,144,255,.16),transparent 24%),radial-gradient(circle at 18% 26%,rgba(157,77,204,.16),transparent 28%),radial-gradient(circle at 82% 38%,rgba(194,144,255,.1),transparent 26%),radial-gradient(circle at 42% 78%,rgba(114,38,158,.2),transparent 32%);box-shadow:inset 0 0 38px rgba(157,77,204,.1);pointer-events:none}
-.day-badge{position:absolute;left:0;right:0;top:380px;text-align:center;font-family:Gabriola,"Palatino Linotype",Georgia,serif;font-size:64px;font-style:normal;font-variant:normal;font-weight:normal;color:rgba(218,190,255,.055);text-shadow:0 0 10px rgba(194,144,255,.055),0 2px 5px rgba(0,0,0,.18);pointer-events:none}
+.day-badge{position:absolute;left:0;right:0;top:380px;text-align:center;font-family:Gabriola,"Palatino Linotype",Georgia,serif;font-size:64px;font-style:normal;font-variant:normal;font-weight:normal;color:rgba(218,190,255,.055);text-shadow:0 0 10px rgba(194,144,255,.055),0 2px 5px rgba(0,0,0,.18);pointer-events:none;user-select:none;-webkit-user-select:none}
 .field-wrap{padding:0 20px;box-sizing:content-box;width:1000px}
 .person{border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(70,30,104,.65));color:var(--ink);padding:10px;margin:10px 0;position:relative;width:270px;box-shadow:0 5px 14px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,255,.12)}
 .person b{display:block;margin-bottom:3px}
@@ -760,7 +760,6 @@ document.addEventListener("pointerdown",e=>{
 });
 render();
 </script></body></html>
-
 
 
 
