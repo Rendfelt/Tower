@@ -17,7 +17,7 @@
  --paper2:#d2ae67;
  --line:#9b79c9;
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{overflow-x:auto}
 body{font-family:"Trebuchet MS",Arial,sans-serif;font-size:22px;margin:0;line-height:1.35;min-width:1040px;background:var(--night);color:var(--ink);padding:18px 20px 28px;background-image:radial-gradient(ellipse at 50% 100%,rgba(129,52,174,.5) 0%,rgba(56,22,92,.36) 28%,transparent 58%),radial-gradient(circle at 72% 8%,rgba(157,77,204,.32),transparent 26%),radial-gradient(circle at 12% 18%,rgba(216,177,92,.16),transparent 22%),repeating-linear-gradient(112deg,rgba(255,255,255,.045) 0 1px,transparent 1px 42px),repeating-linear-gradient(68deg,rgba(0,0,0,.2) 0 2px,transparent 2px 58px),linear-gradient(180deg,#05030b 0%,#1b0d2d 46%,#0b0612 100%);background-attachment:fixed;background-size:auto,auto,auto,180px 180px,220px 220px,auto}
 .top-area{width:1040px;position:relative}
@@ -84,21 +84,19 @@ input::placeholder{color:#bba5db}
 select option{background:#170b25;color:var(--ink)}
 button{cursor:pointer;font-family:"Cinzel","Trajan Pro",Georgia,serif;background:linear-gradient(180deg,var(--purple3),var(--purple2) 48%,var(--purple));color:#fff;text-transform:uppercase;font-weight:bold;text-shadow:0 1px 2px rgba(0,0,0,.65)}
 button:active{transform:translateY(1px)}
-input:focus,select:focus,button:focus{outline:2px solid rgba(234,208,146,.42);outline-offset:1px}
+button,select,summary,label{outline:none;-webkit-touch-callout:none}
+button:focus,button:focus-visible,select:focus,select:focus-visible,summary:focus,summary:focus-visible{outline:none}
+input:focus{outline:2px solid rgba(234,208,146,.42);outline-offset:1px}
 ul{margin:0;padding-left:22px}
-@media(max-width:600px){
- body *{user-select:none;-webkit-user-select:none}
- button,select,input,label,summary{-webkit-tap-highlight-color:transparent}
- input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:text}
- button:focus,select:focus{outline:none}
- input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
- .corner-logo{width:140px}
- .wrap{display:block}
- details.panel{width:1000px}
- .logcomposer{grid-template-columns:1fr}
- .fixed-events{display:grid;grid-template-columns:1fr}
- .logfilters{display:grid;grid-template-columns:1fr 1fr}
-}
+body *{user-select:none;-webkit-user-select:none}
+input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:text}
+input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
+.corner-logo{width:140px}
+.wrap{display:block}
+details.panel{width:1000px}
+.logcomposer{grid-template-columns:1fr}
+.fixed-events{display:grid;grid-template-columns:1fr}
+.logfilters{display:grid;grid-template-columns:1fr 1fr}
 </style><body>
 
 <div class=top-area><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt="">
@@ -766,8 +764,6 @@ document.addEventListener("pointerdown",e=>{
 });
 render();
 </script></body></html>
-
-
 
 
 
