@@ -37,7 +37,8 @@ details.log-panel{width:1000px;margin:14px 20px 0}
 .fixed-events{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px 0}
 .fixed-events button{font-size:19px;padding:8px 10px}
 .logbox{height:270px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(38,17,62,.98),rgba(15,8,28,.98));color:var(--ink);padding:10px 12px;font-size:20px;box-shadow:inset 0 0 24px rgba(0,0,0,.35)}
-.logitem{padding:6px 0;border-bottom:1px solid rgba(216,200,239,.18)}
+.logitem{padding:6px 8px;border-bottom:1px solid rgba(216,200,239,.18);border-radius:6px;cursor:pointer}
+.logitem.selected{background:rgba(216,177,92,.18);box-shadow:inset 0 0 0 1px rgba(255,208,51,.55)}
 .logitem.fixed-event{color:#ffd033;font-weight:bold;text-shadow:0 0 12px rgba(255,196,36,.55)}
 .logitem.fixed-event .logtime{color:#ffc424}
 .logitem:last-child{border-bottom:0}
@@ -65,6 +66,8 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .card.vote-target{background:linear-gradient(180deg,#ffe98f,#d18b1f);border-color:#fff3a8;box-shadow:0 0 0 3px rgba(255,232,120,.8),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
 .card.vote-done{cursor:default;opacity:.75}
+.log-selected .card{opacity:.45;filter:saturate(.72)}
+.log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:0 0 0 4px rgba(255,208,51,.85),0 0 26px rgba(255,208,51,.5),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
@@ -110,7 +113,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,nominationSourceId=null,votingTargetId=null,votingLogId=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,nominationSourceId=null,votingTargetId=null,votingLogId=null,selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -210,10 +213,11 @@ function logText(log){
  return log.text||"";
 }
 function logPlayers(log){
- if(log.type==="custom")return log.playerIds||[];
+ const mentioned=people.filter(p=>p.name&&logText(log).includes(p.name)).map(p=>p.id);
+ if(log.type==="custom")return [...new Set([...(log.playerIds||[]),...mentioned])];
  if(log.type==="death")return [log.playerId].filter(id=>id!=null);
  if(log.type==="nomination")return [log.sourceId,log.targetId,...(log.votes||[])].filter(id=>id!=null);
- return people.filter(p=>(log.text||"").includes(p.name)).map(p=>p.id);
+ return mentioned;
 }
 function logRoles(log){
  if(log.type==="custom")return log.roleIds||[];
@@ -281,14 +285,25 @@ function logMatchesFilters(log){
 function renderLog(){
  const list=$("loglist");
  if(!list)return;
+ const keepTop=list.scrollTop;
+ const wasAtBottom=list.scrollTop+list.clientHeight>=list.scrollHeight-10;
  renderComposerOptions();
  renderFixedEventControls();
  renderLogFilters();
- const visibleLogs=logs.filter(logMatchesFilters);
+ if(selectedLogIndex!=null&&(!logs[selectedLogIndex]||!logMatchesFilters(logs[selectedLogIndex])))selectedLogIndex=null;
+ const visibleLogs=logs.map((log,index)=>({log,index})).filter(item=>logMatchesFilters(item.log));
  list.innerHTML=visibleLogs.length
-   ?visibleLogs.map(l=>`<div class="logitem${l.type==="day"?" fixed-event":""}"><span class="logtime">${esc(l.time)}</span>${highlightLogText(logText(l))}</div>`).join("")
+   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(logText(log))}</div>`).join("")
    :'<div class="logempty">Нет событий</div>';
- list.scrollTop=list.scrollHeight;
+ list.scrollTop=selectedLogIndex==null&&wasAtBottom?list.scrollHeight:keepTop;
+}
+function selectedLogPlayerIds(){
+ if(selectedLogIndex==null || !logs[selectedLogIndex])return [];
+ return logPlayers(logs[selectedLogIndex]);
+}
+function selectLogLine(index){
+ selectedLogIndex=selectedLogIndex===index?null:index;
+ render();
 }
 function renderFixedEventControls(){
  const dayBtn=$("dayEventBtn");
@@ -378,8 +393,8 @@ async function exportJson(){
  a.click();
  URL.revokeObjectURL(a.href);
 }
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;normalizePeople();save();render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;normalizePeople();save();render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -528,6 +543,8 @@ function voteForNominee(voter){
 
 function render(){
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
+field.classList.toggle("log-selected",selectedLogIndex!=null);
+const selectedPlayers=selectedLogPlayerIds();
 let dayBadge=document.createElement("div");
 dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
@@ -575,6 +592,7 @@ people.forEach(p=>{
  if(p.id===votingTargetId)card.classList.add("vote-target");
  else if(votingTargetId)card.classList.add("vote-voter");
  if(votes.includes(p.id))card.classList.add("vote-done");
+ if(selectedPlayers.includes(p.id))card.classList.add("log-highlighted");
  p.x=Math.min(Math.max(0,p.x||0),Math.max(0,field.clientWidth-120));
  p.y=Math.min(Math.max(0,p.y||0),Math.max(0,field.clientHeight-60));
  card.style.left=p.x+"px";card.style.top=p.y+"px";
@@ -705,6 +723,7 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("pointerdown",e=>{
    if(e.button!==0 || e.target.closest(".menu"))return;
+   if(selectedLogIndex!=null)return;
    if(nominationSourceId){
      e.preventDefault();
      finishNomination(p);
