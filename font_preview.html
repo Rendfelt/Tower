@@ -1,0 +1,76 @@
+<!doctype html><html lang="ru"><meta charset="utf-8">
+<meta name="viewport" content="width=1080">
+<title>Башня - варианты шрифтов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;600;700&family=Alegreya+SC:wght@400;700&family=Alice&family=Cormorant+Garamond:wght@400;600;700&family=Cormorant+Infant:wght@400;600;700&family=EB+Garamond:wght@400;600;700&family=Forum&family=Kurale&family=Literata:wght@400;600;700&family=Lora:wght@400;600;700&family=Merriweather:wght@400;700&family=Old+Standard+TT:wght@400;700&family=Oranienbaum&family=Philosopher:wght@400;700&family=Playfair+Display:wght@400;600;700&family=Prata&family=Spectral:wght@400;600;700&family=Vollkorn:wght@400;600;700&family=Yeseva+One&family=Gabriela&display=swap" rel="stylesheet">
+<style>
+:root{
+ --ink:#fff8ee;
+ --muted:#d8c8ef;
+ --night:#090613;
+ --purple:#3a185f;
+ --purple2:#6a2b92;
+ --purple3:#9d4dcc;
+ --gold:#d8b15c;
+ --line:#9b79c9;
+}
+*{box-sizing:border-box}
+html,body{overflow-x:auto}
+body{font-family:"Trebuchet MS",Arial,sans-serif;font-size:22px;margin:0;min-width:1040px;line-height:1.35;background:var(--night);color:var(--ink);padding:18px 20px 34px;background-image:radial-gradient(ellipse at 50% 100%,rgba(129,52,174,.5) 0%,rgba(56,22,92,.36) 28%,transparent 58%),radial-gradient(circle at 72% 8%,rgba(157,77,204,.32),transparent 26%),radial-gradient(circle at 12% 18%,rgba(216,177,92,.16),transparent 22%),repeating-linear-gradient(112deg,rgba(255,255,255,.045) 0 1px,transparent 1px 42px),repeating-linear-gradient(68deg,rgba(0,0,0,.2) 0 2px,transparent 2px 58px),linear-gradient(180deg,#05030b 0%,#1b0d2d 46%,#0b0612 100%);background-attachment:fixed;background-size:auto,auto,auto,180px 180px,220px 220px,auto}
+h1{font-family:"Cormorant Garamond",Georgia,serif;font-size:42px;font-weight:700;margin:0 0 6px;color:#fff;text-shadow:0 0 12px rgba(157,77,204,.85)}
+.note{color:var(--muted);margin:0 0 18px}
+.field{width:1000px;min-height:1000px;border:2px solid #9d6bd5;border-radius:10px;position:relative;overflow:hidden;padding:22px;background:#150922;background-image:radial-gradient(ellipse at 50% 42%,rgba(127,58,169,.42) 0%,rgba(64,24,100,.24) 28%,transparent 62%),radial-gradient(ellipse at 50% 110%,rgba(216,177,92,.16),transparent 42%),linear-gradient(180deg,#211039 0%,#150922 52%,#090511 100%);box-shadow:0 0 0 1px rgba(255,255,255,.1),0 8px 28px rgba(0,0,0,.55),inset 0 0 120px rgba(0,0,0,.68)}
+.field::before{content:"";position:absolute;inset:0;background:url("https://bloodontheclocktower.com/cdn/shop/files/2BloodLogo_2_1.png?v=1758698292&width=2400") center 54%/78% auto no-repeat;opacity:.08;filter:saturate(.95) brightness(.9);mix-blend-mode:screen;pointer-events:none}
+.grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:start}
+.option{display:grid;gap:8px}
+.font-name{font-family:"Trebuchet MS",Arial,sans-serif;color:var(--muted);font-size:16px}
+.card{min-height:150px;border:1px solid #6a3f96;border-radius:8px;padding:10px 11px;background:linear-gradient(180deg,#e2d4ff,#9b74c8);box-shadow:0 5px 14px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.25);color:#1d1713}
+.card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-size:25px;font-weight:700;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.roles{font-size:20px}
+.sample-1{font-family:"Cormorant Garamond",Georgia,serif}
+.sample-2{font-family:"Cormorant Infant",Georgia,serif}
+.sample-3{font-family:"Alegreya",Georgia,serif}
+.sample-4{font-family:"Alegreya SC",Georgia,serif}
+.sample-5{font-family:"EB Garamond",Georgia,serif}
+.sample-6{font-family:"Lora",Georgia,serif}
+.sample-7{font-family:"Vollkorn",Georgia,serif}
+.sample-8{font-family:"Spectral",Georgia,serif}
+.sample-9{font-family:"Playfair Display",Georgia,serif}
+.sample-10{font-family:"Prata",Georgia,serif}
+.sample-11{font-family:"Oranienbaum",Georgia,serif}
+.sample-12{font-family:"Old Standard TT",Georgia,serif}
+.sample-13{font-family:"Alice",Georgia,serif}
+.sample-14{font-family:"Yeseva One",Georgia,serif}
+.sample-15{font-family:"Philosopher",Georgia,serif}
+.sample-16{font-family:"Forum",Georgia,serif}
+.sample-17{font-family:"Literata",Georgia,serif}
+.sample-18{font-family:"Merriweather",Georgia,serif}
+.sample-19{font-family:"Kurale",Georgia,serif}
+.sample-20{font-family:"Gabriela",Georgia,serif}
+</style><body>
+<h1>Варианты шрифтов для карточек</h1>
+<p class="note">Смотри именно имя и роли на плашке. Цвета и размер близки к текущему полю.</p>
+<div class="field"><div class="grid">
+<div class="option"><div class="font-name">1. Cormorant Garamond</div><div class="card sample-1"><b>Мария</b><div class="roles">Snake Charmer<br>Town Crier<br>Цветочница</div></div></div>
+<div class="option"><div class="font-name">2. Cormorant Infant</div><div class="card sample-2"><b>Дмитрий</b><div class="roles">Savant<br>Juggler<br>Математик</div></div></div>
+<div class="option"><div class="font-name">3. Alegreya</div><div class="card sample-3"><b>Шахноза</b><div class="roles">Oracle<br>Seamstress<br>Художник</div></div></div>
+<div class="option"><div class="font-name">4. Alegreya SC</div><div class="card sample-4"><b>Михаил</b><div class="roles">Mutant<br>Sage<br>Гробовщик</div></div></div>
+<div class="option"><div class="font-name">5. EB Garamond</div><div class="card sample-5"><b>Анна</b><div class="roles">Empath<br>Philosopher<br>Рыбак</div></div></div>
+<div class="option"><div class="font-name">6. Lora</div><div class="card sample-6"><b>Павел</b><div class="roles">Klutz<br>Artist<br>Швея</div></div></div>
+<div class="option"><div class="font-name">7. Vollkorn</div><div class="card sample-7"><b>Кас</b><div class="roles">Baron<br>Mayor<br>Солдат</div></div></div>
+<div class="option"><div class="font-name">8. Spectral</div><div class="card sample-8"><b>Тимур</b><div class="roles">Juggler<br>Sage<br>Мутант</div></div></div>
+<div class="option"><div class="font-name">9. Playfair Display</div><div class="card sample-9"><b>Маша</b><div class="roles">Ravenkeeper<br>Chef<br>Часовщик</div></div></div>
+<div class="option"><div class="font-name">10. Prata</div><div class="card sample-10"><b>Даша</b><div class="roles">Monk<br>Slayer<br>Девственница</div></div></div>
+<div class="option"><div class="font-name">11. Oranienbaum</div><div class="card sample-11"><b>Виктор</b><div class="roles">Undertaker<br>Investigator<br>Повеса</div></div></div>
+<div class="option"><div class="font-name">12. Old Standard TT</div><div class="card sample-12"><b>Сергей</b><div class="roles">Fortune Teller<br>Librarian<br>Библиотекарь</div></div></div>
+<div class="option"><div class="font-name">13. Alice</div><div class="card sample-13"><b>Миу</b><div class="roles">Town Crier<br>Philo<br>Савант</div></div></div>
+<div class="option"><div class="font-name">14. Yeseva One</div><div class="card sample-14"><b>Слава</b><div class="roles">Dreamer<br>Clockmaker<br>Церемониймейстер</div></div></div>
+<div class="option"><div class="font-name">15. Philosopher</div><div class="card sample-15"><b>Паша</b><div class="roles">Snake Charmer<br>Flowergirl<br>Оракул</div></div></div>
+<div class="option"><div class="font-name">16. Forum</div><div class="card sample-16"><b>Дмитрий</b><div class="roles">Mathematician<br>Artist<br>Философ</div></div></div>
+<div class="option"><div class="font-name">17. Literata</div><div class="card sample-17"><b>Екатерина</b><div class="roles">Savant<br>Gambler<br>Монах</div></div></div>
+<div class="option"><div class="font-name">18. Merriweather</div><div class="card sample-18"><b>Никита</b><div class="roles">Sailor<br>Pacifist<br>Прачка</div></div></div>
+<div class="option"><div class="font-name">19. Kurale</div><div class="card sample-19"><b>Алексей</b><div class="roles">Professor<br>Minstrel<br>Шпион</div></div></div>
+<div class="option"><div class="font-name">20. Gabriela</div><div class="card sample-20"><b>Ольга</b><div class="roles">Seamstress<br>Oracle<br>Гадалка</div></div></div>
+</div></div>
+</body></html>
