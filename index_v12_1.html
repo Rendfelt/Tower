@@ -312,9 +312,9 @@ function selectedLogRings(){
    map.set(id,rings);
  };
  if(log.type==="nomination"){
-   add(log.sourceId,"rgba(255,208,51,.9)");
+   add(log.sourceId,"rgba(83,180,255,.95)");
    add(log.targetId,"rgba(214,59,79,.95)");
-   (log.votes||[]).forEach(id=>add(id,"rgba(83,180,255,.95)"));
+   (log.votes||[]).forEach(id=>add(id,"rgba(255,208,51,.9)"));
  }else{
    logPlayers(log).forEach(id=>add(id,"rgba(255,208,51,.9)"));
  }
