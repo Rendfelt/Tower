@@ -67,7 +67,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
 .card.vote-done{cursor:default;opacity:.75}
 .log-selected .card{opacity:.45;filter:saturate(.72)}
-.log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:0 0 0 4px rgba(255,208,51,.85),0 0 26px rgba(255,208,51,.5),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
+.log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
@@ -300,6 +300,28 @@ function renderLog(){
 function selectedLogPlayerIds(){
  if(selectedLogIndex==null || !logs[selectedLogIndex])return [];
  return logPlayers(logs[selectedLogIndex]);
+}
+function selectedLogRings(){
+ const map=new Map();
+ if(selectedLogIndex==null || !logs[selectedLogIndex])return map;
+ const log=logs[selectedLogIndex];
+ const add=(id,color)=>{
+   if(id==null)return;
+   const rings=map.get(id)||[];
+   rings.push(color);
+   map.set(id,rings);
+ };
+ if(log.type==="nomination"){
+   add(log.sourceId,"rgba(255,208,51,.9)");
+   add(log.targetId,"rgba(214,59,79,.95)");
+   (log.votes||[]).forEach(id=>add(id,"rgba(83,180,255,.95)"));
+ }else{
+   logPlayers(log).forEach(id=>add(id,"rgba(255,208,51,.9)"));
+ }
+ return map;
+}
+function ringShadow(colors){
+ return colors.map((color,i)=>`0 0 0 ${4+i*5}px ${color}`).join(",");
 }
 function selectLogLine(index){
  selectedLogIndex=selectedLogIndex===index?null:index;
@@ -544,7 +566,7 @@ function voteForNominee(voter){
 function render(){
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 field.classList.toggle("log-selected",selectedLogIndex!=null);
-const selectedPlayers=selectedLogPlayerIds();
+const selectedRings=selectedLogRings();
 let dayBadge=document.createElement("div");
 dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
@@ -592,7 +614,10 @@ people.forEach(p=>{
  if(p.id===votingTargetId)card.classList.add("vote-target");
  else if(votingTargetId)card.classList.add("vote-voter");
  if(votes.includes(p.id))card.classList.add("vote-done");
- if(selectedPlayers.includes(p.id))card.classList.add("log-highlighted");
+ if(selectedRings.has(p.id)){
+   card.classList.add("log-highlighted");
+   card.style.setProperty("--log-rings",ringShadow(selectedRings.get(p.id)));
+ }
  p.x=Math.min(Math.max(0,p.x||0),Math.max(0,field.clientWidth-120));
  p.y=Math.min(Math.max(0,p.y||0),Math.max(0,field.clientHeight-60));
  card.style.left=p.x+"px";card.style.top=p.y+"px";
