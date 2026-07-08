@@ -1,0 +1,228 @@
+{
+  "people": [
+    {
+      "id": 3,
+      "name": "Миу",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "x": 808,
+      "y": 667,
+      "color": "blue"
+    },
+    {
+      "id": 4,
+      "name": "Шахноза",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "x": 309,
+      "y": 454,
+      "color": "blue"
+    },
+    {
+      "id": 7,
+      "name": "Виктор",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "x": 628,
+      "y": 784,
+      "color": "blue"
+    },
+    {
+      "id": 9,
+      "name": "Настя",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "x": 307,
+      "y": 366,
+      "color": "blue"
+    },
+    {
+      "id": 10,
+      "name": "Кас",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "x": 23,
+      "y": 439,
+      "color": "blue"
+    },
+    {
+      "id": 11,
+      "name": "Сергей",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "x": 453,
+      "y": 783,
+      "color": "blue"
+    },
+    {
+      "id": 16,
+      "name": "Оля",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 310,
+      "y": 294
+    },
+    {
+      "id": 17,
+      "name": "Катя",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 309,
+      "y": 604
+    },
+    {
+      "id": 18,
+      "name": "Сергей2",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 475,
+      "y": 450
+    },
+    {
+      "id": 19,
+      "name": "Лера",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 479,
+      "y": 370
+    },
+    {
+      "id": 20,
+      "name": "Оля2",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 475,
+      "y": 292
+    },
+    {
+      "id": 21,
+      "name": "Андрей",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 801,
+      "y": 346
+    },
+    {
+      "id": 22,
+      "name": "Яна",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 468,
+      "y": 537
+    },
+    {
+      "id": 23,
+      "name": "Руслан",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 802,
+      "y": 513
+    },
+    {
+      "id": 24,
+      "name": "Влад",
+      "roles": [],
+      "confirmedRoles": [],
+      "dead": false,
+      "color": "blue",
+      "x": 305,
+      "y": 533
+    }
+  ],
+  "roles": [
+    {
+      "id": 35,
+      "name": "Grandmother"
+    },
+    {
+      "id": 36,
+      "name": "Sailor"
+    },
+    {
+      "id": 37,
+      "name": "Chambermaid"
+    },
+    {
+      "id": 38,
+      "name": "Exorcist"
+    },
+    {
+      "id": 39,
+      "name": "Innkeeper"
+    },
+    {
+      "id": 40,
+      "name": "Gambler"
+    },
+    {
+      "id": 41,
+      "name": "Gossip"
+    },
+    {
+      "id": 42,
+      "name": "Courtier"
+    },
+    {
+      "id": 43,
+      "name": "Professor"
+    },
+    {
+      "id": 44,
+      "name": "Minstrel"
+    },
+    {
+      "id": 45,
+      "name": "Tea Lady"
+    },
+    {
+      "id": 46,
+      "name": "Pacifist"
+    },
+    {
+      "id": 47,
+      "name": "Fool"
+    },
+    {
+      "id": 48,
+      "name": "Goon"
+    },
+    {
+      "id": 49,
+      "name": "Lunatic"
+    },
+    {
+      "id": 50,
+      "name": "Tinker"
+    },
+    {
+      "id": 51,
+      "name": "Moonchild"
+    }
+  ],
+  "logs": [],
+  "pid": 25,
+  "rid": 52,
+  "dayNumber": 0
+}
