@@ -104,7 +104,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
 <p><input id=rname placeholder="Роль"><button onclick="addRole()">Добавить роль</button></p>
 <p><button onclick="exportJson()">Экспорт</button>
-<button onclick="document.getElementById('imp').click()">Импорт</button>
+<button onclick="openImport()">Импорт</button>
 <button onclick="resetState()">Сброс</button>
 <input id="imp" type=file accept=".json" hidden></p></div>
 
@@ -415,7 +415,8 @@ async function exportJson(){
  a.click();
  URL.revokeObjectURL(a.href);
 }
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;normalizePeople();save();render();};r.readAsText(f);};
+function openImport(){imp.value="";imp.click();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;normalizePeople();save();imp.value="";render();};r.readAsText(f);};
 function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
