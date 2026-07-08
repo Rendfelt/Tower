@@ -536,7 +536,7 @@ function cancelNomination(){
  render();
 }
 function finishNomination(target){
- if(!nominationSourceId || target.id===nominationSourceId)return;
+ if(!nominationSourceId)return;
  const log=addNominationLog(nominationSourceId,target.id);
  votingTargetId=target.id;
  votingLogId=log.id;
