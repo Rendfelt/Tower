@@ -774,12 +774,15 @@ function setupCardInteractions(card,menu,p){
      if(!moved){
        openCardMenu(card,menu);
        dragging=false;
+       moved=true;
+       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
      }
    },LONG_PRESS_MS);
  });
 
  card.addEventListener("pointermove",e=>{
    if(!card.hasPointerCapture(e.pointerId))return;
+   if(menu.style.display==="block")return;
    const dx=e.clientX-startX;
    const dy=e.clientY-startY;
    const dist=Math.hypot(dx,dy);
