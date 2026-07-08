@@ -64,6 +64,9 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .card.dead{background:linear-gradient(180deg,#c7c2b7,#7e7770);border-color:#3f3936;color:#2e2b28;box-shadow:0 3px 9px rgba(0,0,0,.35)}
 .card.nomination-source{background:linear-gradient(180deg,#f4dda2,#c69a36);border-color:#7f5515}
 .card.nomination-target{cursor:pointer;box-shadow:0 0 0 2px rgba(11,107,47,.35)}
+.card.conversation-source{background:linear-gradient(180deg,#d7edff,#78a9d8);border-color:#3b6f9c}
+.card.conversation-target{cursor:pointer;box-shadow:0 0 0 2px rgba(83,180,255,.4)}
+.card.conversation-selected{box-shadow:0 0 0 3px rgba(255,208,51,.85),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .card.vote-target{background:linear-gradient(180deg,#ffe98f,#d18b1f);border-color:#fff3a8;box-shadow:0 0 0 3px rgba(255,232,120,.8),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
 .card.vote-done{cursor:default;opacity:.75}
@@ -114,7 +117,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,nominationSourceId=null,votingTargetId=null,votingLogId=null,selectedLogIndex=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -208,10 +211,17 @@ function addNominationLog(sourceId,targetId){
  renderLog();
  return log;
 }
+function addConversationLog(sourceId,targetIds){
+ logs.push({type:"conversation",time:logTime(),sourceId,targetIds:[...targetIds]});
+ if(logs.length>500)logs=logs.slice(-500);
+ save();
+ renderLog();
+}
 function logText(log){
  if(log.type==="custom")return log.text||"";
  if(log.type==="death")return `${playerName(log.playerId)} ${log.dead?deathReasonText(log):"оживает"}`;
  if(log.type==="day")return `Новый день ${log.day||""}`.trim();
+ if(log.type==="conversation")return `${playerName(log.sourceId)} общается с ${(log.targetIds||[]).map(playerName).join(", ")}`;
  if(log.type==="nomination"){
    const source=playerName(log.sourceId);
    const target=playerName(log.targetId);
@@ -225,6 +235,7 @@ function logPlayers(log){
  const mentioned=people.filter(p=>p.name&&logText(log).includes(p.name)).map(p=>p.id);
  if(log.type==="custom")return [...new Set([...(log.playerIds||[]),...mentioned])];
  if(log.type==="death")return [log.playerId].filter(id=>id!=null);
+ if(log.type==="conversation")return [log.sourceId,...(log.targetIds||[])].filter(id=>id!=null);
  if(log.type==="nomination")return [log.sourceId,log.targetId,...(log.votes||[])].filter(id=>id!=null);
  return mentioned;
 }
@@ -426,8 +437,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -455,6 +466,8 @@ function deletePerson(person){
  people=people.filter(p=>p.id!==person.id);
  if(nominationSourceId===person.id)nominationSourceId=null;
  if(votingTargetId===person.id){votingTargetId=null;votingLogId=null;}
+ if(conversationSourceId===person.id)conversationSourceId=null;
+ conversationTargetIds=conversationTargetIds.filter(id=>id!==person.id);
  save();
  render();
 }
@@ -527,6 +540,12 @@ function currentVotes(){
 }
 function updateEventHint(){
  if(!window.eventHint)return;
+ if(conversationSourceId){
+   eventHint.style.display="block";
+   const targets=conversationTargetIds.map(playerName).join(", ")||"никого";
+   eventHint.innerHTML=`${esc(playerName(conversationSourceId))} общается: выбрано ${esc(targets)} <button onclick="finishConversation()">Завершить</button> <button onclick="cancelConversation()">Отмена</button>`;
+   return;
+ }
  if(votingTargetId){
    eventHint.style.display="block";
    eventHint.innerHTML=`Голосование за ${esc(playerName(votingTargetId))}: нажмите на карточку голосующего <button onclick="cancelVoting()">Завершить</button>`;
@@ -540,6 +559,8 @@ function startNomination(person){
  nominationSourceId=person.id;
  votingTargetId=null;
  votingLogId=null;
+ conversationSourceId=null;
+ conversationTargetIds=[];
  closeAllMenus();
  render();
 }
@@ -572,6 +593,34 @@ function voteForNominee(voter){
  }else{
    addLog(`${voter.name} голосует за ${playerName(votingTargetId)}`);
  }
+ render();
+}
+
+function startConversation(person){
+ conversationSourceId=person.id;
+ conversationTargetIds=[];
+ nominationSourceId=null;
+ votingTargetId=null;
+ votingLogId=null;
+ closeAllMenus();
+ render();
+}
+function toggleConversationTarget(person){
+ if(!conversationSourceId || person.id===conversationSourceId)return;
+ conversationTargetIds=conversationTargetIds.includes(person.id)
+   ?conversationTargetIds.filter(id=>id!==person.id)
+   :[...conversationTargetIds,person.id];
+ render();
+}
+function finishConversation(){
+ if(conversationSourceId&&conversationTargetIds.length)addConversationLog(conversationSourceId,conversationTargetIds);
+ conversationSourceId=null;
+ conversationTargetIds=[];
+ render();
+}
+function cancelConversation(){
+ conversationSourceId=null;
+ conversationTargetIds=[];
  render();
 }
 
@@ -621,6 +670,9 @@ people.forEach(p=>{
  card.dataset.id=p.id;
  card.classList.add("color-"+(p.color||"blue"));
  if(p.dead)card.classList.add("dead");
+ if(p.id===conversationSourceId)card.classList.add("conversation-source");
+ else if(conversationSourceId)card.classList.add("conversation-target");
+ if(conversationTargetIds.includes(p.id))card.classList.add("conversation-selected");
  if(p.id===nominationSourceId)card.classList.add("nomination-source");
  else if(nominationSourceId)card.classList.add("nomination-target");
  if(p.id===votingTargetId)card.classList.add("vote-target");
@@ -657,6 +709,9 @@ function fillCardMenu(person,menu){
  let nominateBtn=document.createElement("button");
  nominateBtn.textContent="Номинировать";
  nominateBtn.onclick=()=>startNomination(person);
+ let conversationBtn=document.createElement("button");
+ conversationBtn.textContent="Общение";
+ conversationBtn.onclick=()=>startConversation(person);
  let deadBtn=document.createElement("button");
  deadBtn.textContent=person.dead?"Сделать живым":"Сделать мертвым";
  deadBtn.onclick=()=>person.dead?toggleDead(person):openDeathEditor(person,menu);
@@ -672,7 +727,7 @@ function fillCardMenu(person,menu){
  let deleteBtn=document.createElement("button");
  deleteBtn.textContent="Удалить игрока";
  deleteBtn.onclick=()=>deletePerson(person);
- menu.append(roleBtn,nominateBtn,confirmBtn,deadBtn,colorBtn,filterBtn,unconfirmBtn,deleteBtn);
+ menu.append(roleBtn,nominateBtn,conversationBtn,confirmBtn,deadBtn,colorBtn,filterBtn,unconfirmBtn,deleteBtn);
 }
 
 function setPlayerColor(person,color){
@@ -801,6 +856,11 @@ function setupCardInteractions(card,menu,p){
    if(e.button!==0 || e.target.closest(".menu"))return;
    if(menu.style.display==="block")return;
    if(selectedLogIndex!=null)return;
+   if(conversationSourceId){
+     e.preventDefault();
+     toggleConversationTarget(p);
+     return;
+   }
    if(nominationSourceId){
      e.preventDefault();
      finishNomination(p);
