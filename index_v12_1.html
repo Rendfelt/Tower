@@ -1,6 +1,9 @@
 ﻿<!doctype html><html lang="ru"><meta charset="utf-8">
 <meta name="viewport" content="width=1080">
 <title>Башня</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
  --ink:#fff8ee;
@@ -20,7 +23,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{overflow-x:auto}
-body{font-family:"Trebuchet MS",Arial,sans-serif;font-size:22px;margin:0;line-height:1.35;min-width:1040px;background:var(--night);color:var(--ink);padding:18px 20px 28px;background-image:radial-gradient(ellipse at 50% 100%,rgba(129,52,174,.5) 0%,rgba(56,22,92,.36) 28%,transparent 58%),radial-gradient(circle at 72% 8%,rgba(157,77,204,.32),transparent 26%),radial-gradient(circle at 12% 18%,rgba(216,177,92,.16),transparent 22%),repeating-linear-gradient(112deg,rgba(255,255,255,.045) 0 1px,transparent 1px 42px),repeating-linear-gradient(68deg,rgba(0,0,0,.2) 0 2px,transparent 2px 58px),linear-gradient(180deg,#05030b 0%,#1b0d2d 46%,#0b0612 100%);background-attachment:fixed;background-size:auto,auto,auto,180px 180px,220px 220px,auto}
+body{font-family:"Alegreya SC",Georgia,serif;font-size:22px;margin:0;line-height:1.35;min-width:1040px;background:var(--night);color:var(--ink);padding:18px 20px 28px;background-image:radial-gradient(ellipse at 50% 100%,rgba(129,52,174,.5) 0%,rgba(56,22,92,.36) 28%,transparent 58%),radial-gradient(circle at 72% 8%,rgba(157,77,204,.32),transparent 26%),radial-gradient(circle at 12% 18%,rgba(216,177,92,.16),transparent 22%),repeating-linear-gradient(112deg,rgba(255,255,255,.045) 0 1px,transparent 1px 42px),repeating-linear-gradient(68deg,rgba(0,0,0,.2) 0 2px,transparent 2px 58px),linear-gradient(180deg,#05030b 0%,#1b0d2d 46%,#0b0612 100%);background-attachment:fixed;background-size:auto,auto,auto,180px 180px,220px 220px,auto}
 .top-area{width:1040px;position:relative}
 .corner-logo{position:absolute;right:0;top:0;width:180px;height:auto;filter:drop-shadow(0 8px 16px rgba(0,0,0,.65));pointer-events:none}
 p{margin:0 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -41,7 +44,7 @@ details.log-panel{width:1000px;margin:14px 20px 0}
 .logtime{margin-right:6px;color:#bca7df}
 .log-player{color:#d08cff;font-weight:bold}
 .log-role{color:#ffd76a;font-weight:bold}
-details.panel summary{cursor:pointer;font-family:"Cinzel","Trajan Pro",Georgia,serif;font-weight:bold;margin:4px 0;padding:6px 2px;color:#fff;text-transform:uppercase;letter-spacing:0;text-shadow:0 0 8px rgba(157,77,204,.8)}
+details.panel summary{cursor:pointer;font-family:"Alegreya SC",Georgia,serif;font-weight:bold;margin:4px 0;padding:6px 2px;color:#fff;text-transform:uppercase;letter-spacing:0;text-shadow:0 0 8px rgba(157,77,204,.8)}
 details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,200,239,.35)}
 #field{width:1000px;height:1000px;border:2px solid #9d6bd5;border-radius:10px;position:relative;overflow:hidden;touch-action:auto;background:#150922;background-image:radial-gradient(ellipse at 50% 42%,rgba(127,58,169,.42) 0%,rgba(64,24,100,.24) 28%,transparent 62%),radial-gradient(ellipse at 50% 110%,rgba(216,177,92,.16),transparent 42%),linear-gradient(180deg,#211039 0%,#150922 52%,#090511 100%);background-size:100% 100%;box-shadow:0 0 0 1px rgba(255,255,255,.1),0 8px 28px rgba(0,0,0,.55),inset 0 0 120px rgba(0,0,0,.68)}
 #field::before{content:"";position:absolute;inset:0;background:url("https://bloodontheclocktower.com/cdn/shop/files/2BloodLogo_2_1.png?v=1758698292&width=2400") center 54%/78% auto no-repeat;opacity:.08;filter:saturate(.95) brightness(.9);mix-blend-mode:screen;pointer-events:none}
@@ -52,7 +55,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .person b{display:block;margin-bottom:3px}
 .drop{display:none;position:absolute;left:8px;top:34px;background:#fff;border:1px solid #999;padding:8px;z-index:10}
 .drop label{display:block}
-.card{position:absolute;min-width:148px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:10px 11px;touch-action:none;user-select:none;font-family:"Palatino Linotype",Georgia,serif;font-size:20px;box-shadow:0 5px 14px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.25);color:#1d1713}
+.card{position:absolute;min-width:148px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:10px 11px;touch-action:none;user-select:none;font-family:"Alegreya SC",Georgia,serif;font-size:20px;box-shadow:0 5px 14px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.25);color:#1d1713}
 .card.color-blue{background:linear-gradient(180deg,#e2d4ff,#9b74c8);border-color:#6a3f96}
 .card.color-red{background:linear-gradient(180deg,#f2c6d0,#bb596a);border-color:#873040}
 .card.color-green{background:linear-gradient(180deg,#d5eccb,#78a765);border-color:#4c743b}
@@ -64,14 +67,14 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .card.vote-done{cursor:default;opacity:.75}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
-.card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Palatino Linotype",Georgia,serif;font-size:23px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Alegreya SC",Georgia,serif;font-size:23px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
 .role-confirmed{font-weight:bold;color:#1f7d36}
 .role-crossed{text-decoration:line-through;color:#7c7161}
 .panel .role-confirmed,.menu .role-confirmed{color:#78d084}
 .panel .role-crossed,.menu .role-crossed{color:#8e8068}
 .role-owners{font-size:18px;color:var(--muted);margin:2px 0 8px 16px}
 .menu{display:none;position:absolute;background:linear-gradient(180deg,#2c1645,#13091f);border:1px solid rgba(216,200,239,.55);border-radius:8px;padding:7px;z-index:1000;box-shadow:0 12px 30px rgba(0,0,0,.55);width:420px;max-width:calc(1000px - 8px);overflow-x:hidden;color:var(--ink)}
-.menu button{display:block;width:100%;min-height:46px;margin:3px 0;font-family:"Trebuchet MS",Arial,sans-serif;font-size:21px;font-weight:normal;text-transform:none;text-shadow:none;padding:10px 12px;text-align:left;background:transparent;border-color:transparent;color:#fff8ee}
+.menu button{display:block;width:100%;min-height:46px;margin:3px 0;font-family:"Alegreya SC",Georgia,serif;font-size:21px;font-weight:normal;text-transform:none;text-shadow:none;padding:10px 12px;text-align:left;background:transparent;border-color:transparent;color:#fff8ee}
 .menu button:active{background:rgba(255,255,255,.08)}
 .menu label{display:block;margin:8px 0;}
 .role-check{display:flex!important;align-items:flex-start;gap:10px;min-height:44px;font-size:21px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
@@ -79,11 +82,11 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .role-row{display:flex;align-items:flex-start;gap:8px;margin:6px 0;position:relative}
 .role-row button{min-height:40px;font-size:20px;padding:7px 12px}
 .role-menu{display:none;position:absolute;left:0;top:44px;background:linear-gradient(180deg,#2c1645,#13091f);border:1px solid rgba(216,200,239,.55);border-radius:8px;padding:7px;z-index:20;box-shadow:0 8px 18px rgba(0,0,0,.5);min-width:190px}
-.role-menu button{display:block;width:100%;min-height:44px;font-family:"Trebuchet MS",Arial,sans-serif;font-size:20px;font-weight:normal;text-transform:none;text-shadow:none;padding:10px 12px;margin:3px 0;text-align:left;background:transparent;border-color:transparent;color:#fff8ee}
-input,button,select{font-family:"Trebuchet MS",Arial,sans-serif;font-size:20px;border:1px solid var(--line);border-radius:8px;background:#170b25;color:var(--ink);padding:9px 10px}
+.role-menu button{display:block;width:100%;min-height:44px;font-family:"Alegreya SC",Georgia,serif;font-size:20px;font-weight:normal;text-transform:none;text-shadow:none;padding:10px 12px;margin:3px 0;text-align:left;background:transparent;border-color:transparent;color:#fff8ee}
+input,button,select{font-family:"Alegreya SC",Georgia,serif;font-size:20px;border:1px solid var(--line);border-radius:8px;background:#170b25;color:var(--ink);padding:9px 10px}
 input::placeholder{color:#bba5db}
 select option{background:#170b25;color:var(--ink)}
-button{cursor:pointer;font-family:"Cinzel","Trajan Pro",Georgia,serif;background:linear-gradient(180deg,var(--purple3),var(--purple2) 48%,var(--purple));color:#fff;text-transform:uppercase;font-weight:bold;text-shadow:0 1px 2px rgba(0,0,0,.65)}
+button{cursor:pointer;font-family:"Alegreya SC",Georgia,serif;background:linear-gradient(180deg,var(--purple3),var(--purple2) 48%,var(--purple));color:#fff;text-transform:uppercase;font-weight:bold;text-shadow:0 1px 2px rgba(0,0,0,.65)}
 button:active{transform:translateY(1px)}
 button,select,summary,label{outline:none;-webkit-touch-callout:none}
 button:focus,button:focus-visible,select:focus,select:focus-visible,summary:focus,summary:focus-visible{outline:none}
@@ -760,6 +763,5 @@ document.addEventListener("pointerdown",e=>{
 });
 render();
 </script></body></html>
-
 
 
