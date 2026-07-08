@@ -748,6 +748,7 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("pointerdown",e=>{
    if(e.button!==0 || e.target.closest(".menu"))return;
+   if(menu.style.display==="block")return;
    if(selectedLogIndex!=null)return;
    if(nominationSourceId){
      e.preventDefault();
