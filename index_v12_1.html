@@ -256,7 +256,7 @@ function logText(log){
    const againstIds=electorateIds.filter(id=>!voteIds.includes(id));
    const votes=voteIds.map(playerName).join(", ");
    const against=againstIds.map(playerName).join(", ");
-   return `${source} назначает канцлером ${target}\n${source} президент, ${target} Канцлер, за голосуют (${voteIds.length}): ${votes}\n${source} президент, ${target} Канцлер, против голосуют (${againstIds.length}): ${against}`;
+   return `${source} назначает канцлером ${target}\nза голосуют (${voteIds.length}): ${votes}\nпротив голосуют (${againstIds.length}): ${against}`;
  }
  return log.text||"";
 }
@@ -344,7 +344,7 @@ function renderLog(){
  if(selectedLogIndex!=null&&(!logs[selectedLogIndex]||!logMatchesFilters(logs[selectedLogIndex])))selectedLogIndex=null;
  const visibleLogs=logs.map((log,index)=>({log,index})).filter(item=>logMatchesFilters(item.log));
  list.innerHTML=visibleLogs.length
-   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"||log.type==="fixed"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(hideRoleNames(logText(log))).replace(/\n/g,"<br>")}</div>`).join("")
+   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"||log.text==="Шаффл колоды"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(hideRoleNames(logText(log))).replace(/\n/g,"<br>")}</div>`).join("")
    :'<div class="logempty">Нет событий</div>';
  list.scrollTop=selectedLogIndex==null&&wasAtBottom?list.scrollHeight:keepTop;
 }
