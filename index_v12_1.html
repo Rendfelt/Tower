@@ -38,6 +38,10 @@ details.log-panel{width:1000px;margin:14px 20px 0}
 .logfilters select{font-size:20px;padding:9px 10px;min-width:180px}
 .fixed-events{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px 0}
 .fixed-events button{font-size:19px;padding:8px 10px}
+.fixed-claim{position:relative;display:inline-block}
+.fixed-submenu{position:absolute;left:0;top:calc(100% + 5px);z-index:30;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;min-width:220px;padding:7px;border:1px solid rgba(216,200,239,.55);border-radius:8px;background:linear-gradient(180deg,#2c1645,#13091f);box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.fixed-submenu[hidden]{display:none}
+.fixed-submenu button{min-height:46px;font-size:22px;padding:8px 12px;text-align:center}
 .logbox{height:270px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(38,17,62,.98),rgba(15,8,28,.98));color:var(--ink);padding:10px 12px;font-size:20px;box-shadow:inset 0 0 24px rgba(0,0,0,.35)}
 .logitem{padding:6px 8px;border-bottom:1px solid rgba(216,200,239,.18);border-radius:6px;cursor:pointer}
 .logitem.selected{background:rgba(216,177,92,.18);box-shadow:inset 0 0 0 1px rgba(255,208,51,.55)}
@@ -114,7 +118,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
-<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button><button onclick="addFixedLog('Выложили синюю')">Выложили синюю</button><button onclick="addFixedLog('Выложили красную')">Выложили красную</button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button><button onclick="addFixedLog('Выложили синюю')">Выложили синюю</button><button onclick="addFixedLog('Выложили красную')">Выложили красную</button><span class=fixed-claim><button onclick="toggleBlueClaimMenu(event)">Заявили синих</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addBlueClaim(0)">0</button><button onclick="addBlueClaim(1)">1</button><button onclick="addBlueClaim(2)">2</button><button onclick="addBlueClaim(3)">3</button></span></span></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
@@ -196,6 +200,19 @@ function addFixedLog(text){
  if(logs.length>500)logs=logs.slice(-500);
  save();
  renderLog();
+}
+function toggleBlueClaimMenu(event){
+ event.stopPropagation();
+ const menu=$("blueClaimMenu");
+ if(!menu)return;
+ closeAllMenus();
+ closeRoleMenus();
+ menu.hidden=!menu.hidden;
+}
+function addBlueClaim(count){
+ const menu=$("blueClaimMenu");
+ if(menu)menu.hidden=true;
+ addFixedLog(`Заявили синих: ${count}`);
 }
 function addNominationLog(sourceId,targetId){
  const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[]};
@@ -831,6 +848,10 @@ function setupCardInteractions(card,menu,p){
 }
 
 document.addEventListener("pointerdown",e=>{
+ if(!e.target.closest(".fixed-claim")){
+   const menu=$("blueClaimMenu");
+   if(menu)menu.hidden=true;
+ }
  if(!e.target.closest(".menu"))closeAllMenus();
  if(!e.target.closest(".role-row"))closeRoleMenus();
 });
