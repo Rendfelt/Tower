@@ -123,7 +123,7 @@ const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
-function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
+function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
 function roleIsCrossed(person,id){
@@ -178,15 +178,8 @@ function addCustomLog(text,playerIds,roleIds){
  save();
  renderLog();
 }
-function deathReasonText(log){
- const reason=typeof log==="string"?log:log.reason;
- if(reason==="ability"){
-   return "умирает от способности";
- }
- return ({executed:"казнен",night:"умирает ночью",unclear:"умирает неясно"})[reason]||"умирает";
-}
-function addDeathLog(person,reason,abilityRole){
- logs.push({type:"death",time:logTime(),playerId:person.id,dead:person.dead,reason:person.dead?reason||person.deathReason||"":"",abilityRoleId:abilityRole?.id||null,abilityRoleName:abilityRole?.name||""});
+function addDeathLog(person){
+ logs.push({type:"death",time:logTime(),playerId:person.id,dead:person.dead});
  if(logs.length>500)logs=logs.slice(-500);
  save();
  renderLog();
@@ -214,7 +207,7 @@ function addConversationLog(sourceId,targetIds){
 }
 function logText(log){
  if(log.type==="custom")return log.text||"";
- if(log.type==="death")return `${playerName(log.playerId)} ${log.dead?deathReasonText(log):"оживает"}`;
+ if(log.type==="death")return `${playerName(log.playerId)} ${log.dead?"умирает":"оживает"}`;
  if(log.type==="day")return `Новый день ${log.day||""}`.trim();
  if(log.type==="conversation")return `${playerName(log.sourceId)} общается с ${(log.targetIds||[]).map(playerName).join(", ")}`;
  if(log.type==="nomination"){
@@ -236,7 +229,6 @@ function logPlayers(log){
 }
 function logRoles(log){
  if(log.type==="custom")return log.roleIds||[];
- if(log.type==="death"&&log.abilityRoleId)return [log.abilityRoleId];
  return roles.filter(r=>logText(log).includes(r.name)).map(r=>r.id);
 }
 function renderComposerOptions(){
@@ -461,10 +453,9 @@ function deletePerson(person){
  render();
 }
 function playerTitle(person){return `${person.dead?"☠ ":""}${esc(person.name)}`;}
-function toggleDead(person,reason,abilityRole){
+function toggleDead(person){
  person.dead=!person.dead;
- person.deathReason=person.dead?reason||"unclear":"";
- addDeathLog(person,reason,abilityRole);
+ addDeathLog(person);
  save();
  render();
 }
@@ -675,7 +666,7 @@ function fillCardMenu(person,menu){
  conversationBtn.onclick=()=>startConversation(person);
  let deadBtn=document.createElement("button");
  deadBtn.textContent=person.dead?"Сделать живым":"Сделать мертвым";
- deadBtn.onclick=()=>person.dead?toggleDead(person):openDeathEditor(person,menu);
+ deadBtn.onclick=()=>toggleDead(person);
  let colorBtn=document.createElement("button");
  colorBtn.textContent="Цвет плашки";
  colorBtn.onclick=()=>openColorEditor(person,menu);
@@ -689,45 +680,6 @@ function setPlayerColor(person,color){
  person.color=color;
  save();
  render();
-}
-
-function openDeathEditor(person,menu){
- menu.innerHTML="";
- [["executed","Казнен"],["night","Ночью"],["unclear","Неясно"],["ability","Способность"]].forEach(([reason,title])=>{
-   let b=document.createElement("button");
-   b.textContent=title;
-   b.onclick=()=>toggleDead(person,reason);
-   menu.append(b);
- });
- let back=document.createElement("button");
- back.textContent="Назад";
- back.onclick=()=>fillCardMenu(person,menu);
- menu.append(back);
- fitCardMenu(menu._card,menu);
-}
-
-function openDeathAbilityEditor(person,menu){
- menu.innerHTML="";
- roles.forEach(role=>{
-   let b=document.createElement("button");
-   b.textContent=role.name;
-   b.onclick=()=>toggleDead(person,"ability",{id:role.id,name:role.name});
-   menu.append(b);
- });
- let custom=document.createElement("input");
- custom.placeholder="Вписать роль";
- let apply=document.createElement("button");
- apply.textContent="Применить";
- apply.onclick=()=>{
-   const name=custom.value.trim();
-   if(name)toggleDead(person,"ability",{name});
- };
- menu.append(custom,apply);
- let back=document.createElement("button");
- back.textContent="Назад";
- back.onclick=()=>openDeathEditor(person,menu);
- menu.append(back);
- fitCardMenu(menu._card,menu);
 }
 
 function openColorEditor(person,menu){
