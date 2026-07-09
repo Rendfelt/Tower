@@ -116,11 +116,11 @@ input:focus{outline:2px solid rgba(116,221,255,.48);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
-<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button onclick="addGovernmentFixedLog('выложили синюю')">Выложили синюю</button><button onclick="addGovernmentFixedLog('выложили красную')">Выложили красную</button><button onclick="addDeckShuffleLog()">Шаффл колоды</button><span class=fixed-claim><button onclick="toggleBlueClaimMenu(event)">Заявили синих</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addBlueClaim(0)">0</button><button onclick="addBlueClaim(1)">1</button><button onclick="addBlueClaim(2)">2</button><button onclick="addBlueClaim(3)">3</button></span></span></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logEventFilter onchange="renderLog()"><option value="">Все события</option><option value="cards">Выложили</option></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><span class=fixed-claim><button onclick="openCardPolicyMenu(event,'выложили синюю')">Выложили синюю</button><button onclick="openCardPolicyMenu(event,'выложили красную')">Выложили красную</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addCardPolicyLog(0)">0</button><button onclick="addCardPolicyLog(1)">1</button><button onclick="addCardPolicyLog(2)">2</button><button onclick="addCardPolicyLog(3)">3</button></span></span><button onclick="addDeckShuffleLog()">Шаффл колоды</button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logEventFilter onchange="renderLog()"><option value="">Все события</option><option value="cards">Выложили</option></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,pendingCardPolicyText="",nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -202,6 +202,8 @@ function addGovernmentFixedLog(text){
 }
 function addDeckShuffleLog(){
  blueClaimCount=0;
+ const menu=$("blueClaimMenu");
+ if(menu)menu.hidden=true;
  addFixedLog("Шаффл колоды");
 }
 function blueClaimWord(count){
@@ -209,19 +211,21 @@ function blueClaimWord(count){
  if(count>=2&&count<=4)return "синие";
  return "синих";
 }
-function toggleBlueClaimMenu(event){
+function openCardPolicyMenu(event,text){
  event.stopPropagation();
  const menu=$("blueClaimMenu");
  if(!menu)return;
  closeAllMenus();
  closeRoleMenus();
- menu.hidden=!menu.hidden;
+ pendingCardPolicyText=text;
+ menu.hidden=false;
 }
-function addBlueClaim(count){
+function addCardPolicyLog(count){
  const menu=$("blueClaimMenu");
  if(menu)menu.hidden=true;
  blueClaimCount+=count;
- addGovernmentFixedLog(`заявили ${count} ${blueClaimWord(count)} (${blueClaimCount})`);
+ addGovernmentFixedLog(`${pendingCardPolicyText}, заявили ${count} ${blueClaimWord(count)} (${blueClaimCount})`);
+ pendingCardPolicyText="";
 }
 function addNominationLog(sourceId,targetId){
  const electorateIds=people.filter(p=>!p.dead).map(p=>p.id);
