@@ -317,7 +317,7 @@ function hideRoleNames(text){
  return masked;
 }
 function logMatchesFilters(log){
- if(log.type==="day"||log.type==="fixed")return true;
+ if(log.type==="day"||(log.type==="fixed"&&log.text==="Шаффл колоды"))return true;
  const text=hideRoleNames(logText(log)).toLowerCase();
  const player=$("logPlayerFilter")?.value||"";
  if(player&&!logPlayers(log).includes(+player)&&!text.includes(player.toLowerCase()))return false;
