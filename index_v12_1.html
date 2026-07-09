@@ -114,7 +114,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
-<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button><button onclick="addFixedLog('Выложили синюю')">Выложили синюю</button><button onclick="addFixedLog('Выложили красную')">Выложили красную</button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
@@ -191,6 +191,12 @@ function addDayLog(){
  save();
  renderLog();
 }
+function addFixedLog(text){
+ logs.push({type:"fixed",time:logTime(),text});
+ if(logs.length>500)logs=logs.slice(-500);
+ save();
+ renderLog();
+}
 function addNominationLog(sourceId,targetId){
  const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[]};
  logs.push(log);
@@ -209,6 +215,7 @@ function logText(log){
  if(log.type==="custom")return log.text||"";
  if(log.type==="death")return `${playerName(log.playerId)} ${log.dead?"умирает":"оживает"}`;
  if(log.type==="day")return `Новый день ${log.day||""}`.trim();
+ if(log.type==="fixed")return log.text||"";
  if(log.type==="conversation")return `${playerName(log.sourceId)} общается с ${(log.targetIds||[]).map(playerName).join(", ")}`;
  if(log.type==="nomination"){
    const source=playerName(log.sourceId);
@@ -280,7 +287,7 @@ function hideRoleNames(text){
  return masked;
 }
 function logMatchesFilters(log){
- if(log.type==="day")return true;
+ if(log.type==="day"||log.type==="fixed")return true;
  const text=hideRoleNames(logText(log)).toLowerCase();
  const player=$("logPlayerFilter")?.value||"";
  if(player&&!logPlayers(log).includes(+player)&&!text.includes(player.toLowerCase()))return false;
@@ -297,7 +304,7 @@ function renderLog(){
  if(selectedLogIndex!=null&&(!logs[selectedLogIndex]||!logMatchesFilters(logs[selectedLogIndex])))selectedLogIndex=null;
  const visibleLogs=logs.map((log,index)=>({log,index})).filter(item=>logMatchesFilters(item.log));
  list.innerHTML=visibleLogs.length
-   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(hideRoleNames(logText(log)))}</div>`).join("")
+   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"||log.type==="fixed"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(hideRoleNames(logText(log)))}</div>`).join("")
    :'<div class="logempty">Нет событий</div>';
  list.scrollTop=selectedLogIndex==null&&wasAtBottom?list.scrollHeight:keepTop;
 }
