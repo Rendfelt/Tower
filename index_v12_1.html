@@ -145,8 +145,7 @@ function personRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)
 function cardRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>");}
 function cardHtml(person,votes){
  return "<b>"+playerTitle(person)+(votes.includes(person.id)?" ✋":"")+"</b>"
-   +(person.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"")
-   +cardRolesHtml(person);
+   +(person.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"");
 }
 function refreshRoleViews(){
  const votes=currentVotes();
