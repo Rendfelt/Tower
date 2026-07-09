@@ -117,7 +117,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
-<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button onclick="addFixedLog('Выложили синюю')">Выложили синюю</button><button onclick="addFixedLog('Выложили красную')">Выложили красную</button><button onclick="addDeckShuffleLog()">Шаффл колоды</button><span class=fixed-claim><button onclick="toggleBlueClaimMenu(event)">Заявили синих</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addBlueClaim(0)">0</button><button onclick="addBlueClaim(1)">1</button><button onclick="addBlueClaim(2)">2</button><button onclick="addBlueClaim(3)">3</button></span></span></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button onclick="addGovernmentFixedLog('выложили синюю')">Выложили синюю</button><button onclick="addGovernmentFixedLog('выложили красную')">Выложили красную</button><button onclick="addDeckShuffleLog()">Шаффл колоды</button><span class=fixed-claim><button onclick="toggleBlueClaimMenu(event)">Заявили синих</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addBlueClaim(0)">0</button><button onclick="addBlueClaim(1)">1</button><button onclick="addBlueClaim(2)">2</button><button onclick="addBlueClaim(3)">3</button></span></span></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
@@ -193,9 +193,22 @@ function addFixedLog(text){
  save();
  renderLog();
 }
+function lastGovernmentPrefix(){
+ const nomination=[...logs].reverse().find(log=>log.type==="nomination");
+ if(!nomination)return "";
+ return `Президент ${playerName(nomination.sourceId)}, канцлер ${playerName(nomination.targetId)}, `;
+}
+function addGovernmentFixedLog(text){
+ addFixedLog(lastGovernmentPrefix()+text);
+}
 function addDeckShuffleLog(){
  blueClaimCount=0;
  addFixedLog("Шаффл колоды");
+}
+function blueClaimWord(count){
+ if(count===1)return "синюю";
+ if(count>=2&&count<=4)return "синие";
+ return "синих";
 }
 function toggleBlueClaimMenu(event){
  event.stopPropagation();
@@ -209,7 +222,7 @@ function addBlueClaim(count){
  const menu=$("blueClaimMenu");
  if(menu)menu.hidden=true;
  blueClaimCount+=count;
- addFixedLog(`Заявили синих: ${count} (${blueClaimCount})`);
+ addGovernmentFixedLog(`заявили ${count} ${blueClaimWord(count)} (${blueClaimCount})`);
 }
 function addNominationLog(sourceId,targetId){
  const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[]};
