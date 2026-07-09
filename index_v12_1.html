@@ -117,11 +117,11 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
-<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button onclick="addFixedLog('Выложили синюю')">Выложили синюю</button><button onclick="addFixedLog('Выложили красную')">Выложили красную</button><button onclick="addFixedLog('Шаффл колоды')">Шаффл колоды</button><span class=fixed-claim><button onclick="toggleBlueClaimMenu(event)">Заявили синих</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addBlueClaim(0)">0</button><button onclick="addBlueClaim(1)">1</button><button onclick="addBlueClaim(2)">2</button><button onclick="addBlueClaim(3)">3</button></span></span></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button onclick="addFixedLog('Выложили синюю')">Выложили синюю</button><button onclick="addFixedLog('Выложили красную')">Выложили красную</button><button onclick="addDeckShuffleLog()">Шаффл колоды</button><span class=fixed-claim><button onclick="toggleBlueClaimMenu(event)">Заявили синих</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addBlueClaim(0)">0</button><button onclick="addBlueClaim(1)">1</button><button onclick="addBlueClaim(2)">2</button><button onclick="addBlueClaim(3)">3</button></span></span></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -167,7 +167,7 @@ function refreshRoleViews(){
  });
  renderLog();
 }
-function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,pid,rid,dayNumber}));}
+function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,pid,rid,dayNumber,blueClaimCount}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
  logs.push({time:logTime(),text});
@@ -193,6 +193,10 @@ function addFixedLog(text){
  save();
  renderLog();
 }
+function addDeckShuffleLog(){
+ blueClaimCount=0;
+ addFixedLog("Шаффл колоды");
+}
 function toggleBlueClaimMenu(event){
  event.stopPropagation();
  const menu=$("blueClaimMenu");
@@ -204,7 +208,8 @@ function toggleBlueClaimMenu(event){
 function addBlueClaim(count){
  const menu=$("blueClaimMenu");
  if(menu)menu.hidden=true;
- addFixedLog(`Заявили синих: ${count}`);
+ blueClaimCount+=count;
+ addFixedLog(`Заявили синих: ${count} (${blueClaimCount})`);
 }
 function addNominationLog(sourceId,targetId){
  const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[]};
@@ -402,9 +407,9 @@ function addCustomLogEvent(){
  input.value="";
  input._meta={playerIds:[],roleIds:[]};
 }
-(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length}catch{}}normalizePeople();})();
+(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0}catch{}}normalizePeople();})();
 async function exportJson(){
- const data=JSON.stringify({people,roles,logs,pid,rid,dayNumber},null,2);
+ const data=JSON.stringify({people,roles,logs,pid,rid,dayNumber,blueClaimCount},null,2);
  const blob=new Blob([data],{type:"application/json"});
  if(window.showSaveFilePicker){
    try{
@@ -427,8 +432,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;blueClaimCount=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
