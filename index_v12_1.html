@@ -27,7 +27,7 @@
 html,body{overflow-x:auto}
 body{font-family:"Alegreya SC",Georgia,serif;font-size:22px;margin:0;line-height:1.35;min-width:840px;background:linear-gradient(135deg,#3b0712 0%,#0b72a8 100%);color:var(--ink);padding:18px 20px 28px;background-attachment:fixed}
 .top-area{width:840px;position:relative}
-.corner-logo{position:absolute;right:0;top:0;width:180px;height:auto;filter:drop-shadow(0 8px 16px rgba(0,0,0,.65));pointer-events:none}
+.corner-logo{position:absolute;right:0;top:0;width:170px;height:118px;filter:drop-shadow(0 8px 16px rgba(0,0,0,.65));pointer-events:none}
 p{margin:0 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .wrap{display:flex;gap:20px;align-items:flex-start;margin:14px 0 8px;width:840px;position:relative;min-height:0}
 details.panel{width:300px;margin-bottom:12px;background:linear-gradient(180deg,rgba(13,91,135,.95),rgba(3,22,36,.98));border:1px solid var(--line);border-radius:8px;padding:8px 10px;box-shadow:0 8px 22px rgba(0,0,0,.45),inset 0 0 0 1px rgba(218,249,255,.14)}
@@ -108,7 +108,28 @@ input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:tex
 input:focus{outline:2px solid rgba(116,221,255,.48);outline-offset:1px}
 </style><body>
 
-<div class=top-area><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt="">
+<div class=top-area><svg class=corner-logo viewBox="0 0 220 150" aria-hidden="true">
+<defs>
+<linearGradient id=sealSplit x1=0 y1=0 x2=1 y2=1>
+<stop offset=0 stop-color="#7f1427"/>
+<stop offset=.48 stop-color="#401225"/>
+<stop offset=.52 stop-color="#0a4f78"/>
+<stop offset=1 stop-color="#3ac3ee"/>
+</linearGradient>
+<radialGradient id=sealGlow cx=.5 cy=.42 r=.66>
+<stop offset=0 stop-color="#e8fbff" stop-opacity=".42"/>
+<stop offset=.45 stop-color="#79d8ff" stop-opacity=".18"/>
+<stop offset=1 stop-color="#020813" stop-opacity=".8"/>
+</radialGradient>
+</defs>
+<path d="M110 8 202 42v38c0 36-25 53-92 63-67-10-92-27-92-63V42Z" fill="url(#sealSplit)" stroke="#bfe8ff" stroke-width="4"/>
+<path d="M110 18 190 48v31c0 29-21 43-80 52-59-9-80-23-80-52V48Z" fill="url(#sealGlow)" stroke="#d8b15c" stroke-width="2" opacity=".9"/>
+<path d="M72 106h76v14H72Zm11-51h54v51H83Zm9-22h36v22H92Zm-5 0h46v12H87Zm8 33h14v40H95Zm26 0h14v40h-14Z" fill="#f2fbff" opacity=".92"/>
+<path d="M88 55h44M82 106h58" stroke="#03111b" stroke-width="4" opacity=".38"/>
+<path d="M61 73h98" stroke="#d8b15c" stroke-width="3" opacity=".85"/>
+<circle cx="61" cy="73" r="6" fill="#d8b15c"/>
+<circle cx="159" cy="73" r="6" fill="#d8b15c"/>
+</svg>
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
 <p><button onclick="exportJson()">Экспорт</button>
 <button onclick="openImport()">Импорт</button>
