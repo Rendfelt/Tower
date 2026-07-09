@@ -116,7 +116,7 @@ input:focus{outline:2px solid rgba(116,221,255,.48);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
-<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button onclick="addGovernmentFixedLog('выложили синюю')">Выложили синюю</button><button onclick="addGovernmentFixedLog('выложили красную')">Выложили красную</button><button onclick="addDeckShuffleLog()">Шаффл колоды</button><span class=fixed-claim><button onclick="toggleBlueClaimMenu(event)">Заявили синих</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addBlueClaim(0)">0</button><button onclick="addBlueClaim(1)">1</button><button onclick="addBlueClaim(2)">2</button><button onclick="addBlueClaim(3)">3</button></span></span></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button onclick="addGovernmentFixedLog('выложили синюю')">Выложили синюю</button><button onclick="addGovernmentFixedLog('выложили красную')">Выложили красную</button><button onclick="addDeckShuffleLog()">Шаффл колоды</button><span class=fixed-claim><button onclick="toggleBlueClaimMenu(event)">Заявили синих</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addBlueClaim(0)">0</button><button onclick="addBlueClaim(1)">1</button><button onclick="addBlueClaim(2)">2</button><button onclick="addBlueClaim(3)">3</button></span></span></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logEventFilter onchange="renderLog()"><option value="">Все события</option><option value="cards">Выложили</option></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
@@ -280,6 +280,11 @@ function renderLogFilters(){
  playerFilter.innerHTML='<option value="">Все игроки</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
  playerFilter.value=people.some(p=>String(p.id)===playerValue)?playerValue:"";
 }
+function isCardPolicyLog(log){
+ if(log.type!=="fixed")return false;
+ const text=logText(log).toLowerCase();
+ return text.includes("выложили ")||text.includes("заявили ");
+}
 function highlightLogText(text){
  let html=esc(text);
  const isWordChar=ch=>!!ch&&/[A-Za-zА-Яа-яЁё0-9_]/.test(ch);
@@ -317,9 +322,11 @@ function hideRoleNames(text){
  return masked;
 }
 function logMatchesFilters(log){
- if(log.type==="day"||(log.type==="fixed"&&log.text==="Шаффл колоды"))return true;
  const text=hideRoleNames(logText(log)).toLowerCase();
  const player=$("logPlayerFilter")?.value||"";
+ const eventFilter=$("logEventFilter")?.value||"";
+ if(eventFilter==="cards"&&!isCardPolicyLog(log))return false;
+ if(!eventFilter&&(log.type==="day"||(log.type==="fixed"&&log.text==="Шаффл колоды")))return true;
  if(player&&!logPlayers(log).includes(+player)&&!text.includes(player.toLowerCase()))return false;
  return true;
 }
