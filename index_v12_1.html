@@ -665,9 +665,6 @@ function fillCardMenu(person,menu){
  let nominateBtn=document.createElement("button");
  nominateBtn.textContent="Номинировать";
  nominateBtn.onclick=()=>startNomination(person);
- let conversationBtn=document.createElement("button");
- conversationBtn.textContent="Общение";
- conversationBtn.onclick=()=>startConversation(person);
  let deadBtn=document.createElement("button");
  deadBtn.textContent=person.dead?"Сделать живым":"Сделать мертвым";
  deadBtn.onclick=()=>toggleDead(person);
@@ -677,7 +674,7 @@ function fillCardMenu(person,menu){
  let deleteBtn=document.createElement("button");
  deleteBtn.textContent="Удалить игрока";
  deleteBtn.onclick=()=>deletePerson(person);
- menu.append(nominateBtn,conversationBtn,deadBtn,colorBtn,filterBtn,deleteBtn);
+ menu.append(nominateBtn,deadBtn,colorBtn,filterBtn,deleteBtn);
 }
 
 function setPlayerColor(person,color){
