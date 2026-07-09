@@ -21,6 +21,8 @@
  --paper2:#d2ae67;
  --line:#9b79c9;
 }
+.secret-only{display:none!important}
+.secret-hide-roles{display:none!important}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{overflow-x:auto}
 body{font-family:"Alegreya SC",Georgia,serif;font-size:22px;margin:0;line-height:1.35;min-width:1040px;background:var(--night);color:var(--ink);padding:18px 20px 28px;background-image:radial-gradient(ellipse at 50% 100%,rgba(129,52,174,.5) 0%,rgba(56,22,92,.36) 28%,transparent 58%),radial-gradient(circle at 72% 8%,rgba(157,77,204,.32),transparent 26%),radial-gradient(circle at 12% 18%,rgba(216,177,92,.16),transparent 22%),repeating-linear-gradient(112deg,rgba(255,255,255,.045) 0 1px,transparent 1px 42px),repeating-linear-gradient(68deg,rgba(0,0,0,.2) 0 2px,transparent 2px 58px),linear-gradient(180deg,#05030b 0%,#1b0d2d 46%,#0b0612 100%);background-attachment:fixed;background-size:auto,auto,auto,180px 180px,220px 220px,auto}
@@ -106,14 +108,13 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 
 <div class=top-area><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt="">
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
-<p><input id=rname placeholder="Роль"><button onclick="addRole()">Добавить роль</button></p>
 <p><button onclick="exportJson()">Экспорт</button>
 <button onclick="openImport()">Импорт</button>
 <button onclick="resetState()">Сброс</button>
 <input id="imp" type=file accept=".json" hidden></p></div>
 
-<div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div>
-<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
+<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
@@ -151,7 +152,7 @@ function refreshRoleViews(){
  const votes=currentVotes();
  document.querySelectorAll(".person").forEach(box=>{
    const person=people.find(p=>p.id===+box.dataset.id);
-   if(person)box.innerHTML=`<b>${playerTitle(person)}</b><div>${personRolesHtml(person)}</div>`;
+   if(person)box.innerHTML=`<b>${playerTitle(person)}</b>`;
  });
  document.querySelectorAll(".card").forEach(card=>{
    const person=people.find(p=>p.id===+card.dataset.id);
@@ -160,10 +161,6 @@ function refreshRoleViews(){
      card.innerHTML=cardHtml(person,votes);
      if(menu)card.append(menu);
    }
- });
- roles.forEach(r=>{
-   const info=document.querySelector(`[data-role-info="${r.id}"]`);
-   if(info)info.innerHTML=roleListHtml(r);
  });
  renderLog();
 }
@@ -184,8 +181,7 @@ function addCustomLog(text,playerIds,roleIds){
 function deathReasonText(log){
  const reason=typeof log==="string"?log:log.reason;
  if(reason==="ability"){
-   const roleName=typeof log==="object"?(log.abilityRoleName||rn(log.abilityRoleId)):"";
-   return `умирает от способности${roleName&&roleName!=="?"?` ${roleName}`:""}`;
+   return "умирает от способности";
  }
  return ({executed:"казнен",night:"умирает ночью",unclear:"умирает неясно"})[reason]||"умирает";
 }
@@ -245,21 +241,15 @@ function logRoles(log){
 }
 function renderComposerOptions(){
  const playerSelect=$("logInsertPlayer");
- const roleSelect=$("logInsertRole");
- if(!playerSelect||!roleSelect)return;
+ if(!playerSelect)return;
  playerSelect.innerHTML='<option value="">+ игрок</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
- roleSelect.innerHTML='<option value="">+ роль</option>'+roles.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join("");
 }
 function renderLogFilters(){
  const playerFilter=$("logPlayerFilter");
- const roleFilter=$("logRoleFilter");
- if(!playerFilter||!roleFilter)return;
+ if(!playerFilter)return;
  const playerValue=playerFilter.value;
- const roleValue=roleFilter.value;
  playerFilter.innerHTML='<option value="">Все игроки</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
- roleFilter.innerHTML='<option value="">Все роли</option>'+roles.map(r=>`<option value="${r.id}">${esc(r.name)}</option>`).join("");
  playerFilter.value=people.some(p=>String(p.id)===playerValue)?playerValue:"";
- roleFilter.value=roles.some(r=>String(r.id)===roleValue)?roleValue:"";
 }
 function highlightLogText(text){
  let html=esc(text);
@@ -286,20 +276,22 @@ function highlightLogText(text){
    html=replaceEntity(html,p.name,`PLAYER_MARK_${i}`);
    html=html.split(`<span class="PLAYER_MARK_${i}">${esc(p.name)}</span>`).join(mark);
  });
- roles.forEach(r=>{
-   if(!r.name)return;
-   html=replaceEntity(html,r.name,"log-role");
- });
  playerMarks.forEach(([mark,value])=>{html=html.split(mark).join(value);});
  return html;
 }
+function hideRoleNames(text){
+ let masked=String(text);
+ roles.forEach(r=>{
+   if(!r.name)return;
+   masked=masked.split(r.name).join("[скрыто]");
+ });
+ return masked;
+}
 function logMatchesFilters(log){
  if(log.type==="day")return true;
- const text=logText(log).toLowerCase();
+ const text=hideRoleNames(logText(log)).toLowerCase();
  const player=$("logPlayerFilter")?.value||"";
- const role=$("logRoleFilter")?.value||"";
  if(player&&!logPlayers(log).includes(+player)&&!text.includes(player.toLowerCase()))return false;
- if(role&&!logRoles(log).includes(+role)&&!text.includes(role.toLowerCase()))return false;
  return true;
 }
 function renderLog(){
@@ -313,7 +305,7 @@ function renderLog(){
  if(selectedLogIndex!=null&&(!logs[selectedLogIndex]||!logMatchesFilters(logs[selectedLogIndex])))selectedLogIndex=null;
  const visibleLogs=logs.map((log,index)=>({log,index})).filter(item=>logMatchesFilters(item.log));
  list.innerHTML=visibleLogs.length
-   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(logText(log))}</div>`).join("")
+   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(hideRoleNames(logText(log)))}</div>`).join("")
    :'<div class="logempty">Нет событий</div>';
  list.scrollTop=selectedLogIndex==null&&wasAtBottom?list.scrollHeight:keepTop;
 }
@@ -355,11 +347,9 @@ function renderFixedEventControls(){
 }
 function filterLogByPlayer(person){
  const playerFilter=$("logPlayerFilter");
- const roleFilter=$("logRoleFilter");
- if(!playerFilter||!roleFilter)return;
+ if(!playerFilter)return;
  renderLogFilters();
  playerFilter.value=person.id;
- roleFilter.value="";
  closeAllMenus();
  renderLog();
 }
@@ -624,7 +614,7 @@ function cancelConversation(){
 }
 
 function render(){
-plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
+plist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
 let dayBadge=document.createElement("div");
@@ -632,36 +622,11 @@ dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
 dayBadge.textContent=`День ${dayNumber}`;
 field.append(dayBadge);
-roles.forEach(r=>{
- let li=document.createElement("li");
- let row=document.createElement("div");
- row.className="role-row";
- let info=document.createElement("div");
- info.dataset.roleInfo=r.id;
- info.innerHTML=roleListHtml(r);
- let menuBtn=document.createElement("button");
- menuBtn.textContent="⋮";
- let roleMenu=document.createElement("div");
- roleMenu.className="role-menu";
- let del=document.createElement("button");
- del.textContent="Удалить";
- del.onclick=()=>deleteRole(r);
- roleMenu.append(del);
- menuBtn.onclick=e=>{
-   e.stopPropagation();
-   const next=roleMenu.style.display==="block"?"none":"block";
-   closeRoleMenus(roleMenu);
-   roleMenu.style.display=next;
- };
- row.append(menuBtn,info,roleMenu);
- li.append(row);
- rlist.append(li);
-});
 people.forEach(p=>{
  const votes=currentVotes();
  let box=document.createElement("div");box.className="person";
  box.dataset.id=p.id;
- box.innerHTML=`<b>${playerTitle(p)}</b><div>${personRolesHtml(p)}</div>`;
+ box.innerHTML=`<b>${playerTitle(p)}</b>`;
  plist.append(box);
 
  let card=document.createElement("div");
@@ -699,9 +664,6 @@ people.forEach(p=>{
 
 function fillCardMenu(person,menu){
  menu.innerHTML="";
- let roleBtn=document.createElement("button");
- roleBtn.textContent="Назначить роли";
- roleBtn.onclick=()=>openRoleEditor(person,menu);
  let filterBtn=document.createElement("button");
  filterBtn.textContent="Фильтровать";
  filterBtn.onclick=()=>filterLogByPlayer(person);
@@ -717,16 +679,10 @@ function fillCardMenu(person,menu){
  let colorBtn=document.createElement("button");
  colorBtn.textContent="Цвет плашки";
  colorBtn.onclick=()=>openColorEditor(person,menu);
- let confirmBtn=document.createElement("button");
- confirmBtn.textContent="Добавить подтвержденную роль";
- confirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu,"add");
- let unconfirmBtn=document.createElement("button");
- unconfirmBtn.textContent="Убрать подтвержденную роль";
- unconfirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu,"remove");
  let deleteBtn=document.createElement("button");
  deleteBtn.textContent="Удалить игрока";
  deleteBtn.onclick=()=>deletePerson(person);
- menu.append(roleBtn,nominateBtn,conversationBtn,confirmBtn,deadBtn,colorBtn,filterBtn,unconfirmBtn,deleteBtn);
+ menu.append(nominateBtn,conversationBtn,deadBtn,colorBtn,filterBtn,deleteBtn);
 }
 
 function setPlayerColor(person,color){
@@ -740,7 +696,7 @@ function openDeathEditor(person,menu){
  [["executed","Казнен"],["night","Ночью"],["unclear","Неясно"],["ability","Способность"]].forEach(([reason,title])=>{
    let b=document.createElement("button");
    b.textContent=title;
-   b.onclick=()=>reason==="ability"?openDeathAbilityEditor(person,menu):toggleDead(person,reason);
+   b.onclick=()=>toggleDead(person,reason);
    menu.append(b);
  });
  let back=document.createElement("button");
