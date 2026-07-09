@@ -224,7 +224,8 @@ function addBlueClaim(count){
  addGovernmentFixedLog(`заявили ${count} ${blueClaimWord(count)} (${blueClaimCount})`);
 }
 function addNominationLog(sourceId,targetId){
- const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[]};
+ const electorateIds=people.filter(p=>!p.dead).map(p=>p.id);
+ const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[],electorateIds};
  logs.push(log);
  if(logs.length>500)logs=logs.slice(-500);
  save();
@@ -247,8 +248,11 @@ function logText(log){
    const source=playerName(log.sourceId);
    const target=playerName(log.targetId);
    const voteIds=log.votes||[];
+   const electorateIds=log.electorateIds||people.filter(p=>!p.dead).map(p=>p.id);
+   const againstIds=electorateIds.filter(id=>!voteIds.includes(id));
    const votes=voteIds.map(playerName).join(", ");
-   return `${source} номинирует ${target}.${votes?` За ${target} голосуют (${voteIds.length}): ${votes}`:""}`;
+   const against=againstIds.map(playerName).join(", ");
+   return `${source} назначает канцлером ${target}\n${source} президент, ${target} Канцлер, за голосуют (${voteIds.length}): ${votes}\n${source} президент, ${target} Канцлер, против голосуют (${againstIds.length}): ${against}`;
  }
  return log.text||"";
 }
@@ -257,7 +261,7 @@ function logPlayers(log){
  if(log.type==="custom")return [...new Set([...(log.playerIds||[]),...mentioned])];
  if(log.type==="death")return [log.playerId].filter(id=>id!=null);
  if(log.type==="conversation")return [log.sourceId,...(log.targetIds||[])].filter(id=>id!=null);
- if(log.type==="nomination")return [log.sourceId,log.targetId,...(log.votes||[])].filter(id=>id!=null);
+ if(log.type==="nomination")return [log.sourceId,log.targetId,...(log.votes||[]),...(log.electorateIds||[])].filter(id=>id!=null);
  return mentioned;
 }
 function logRoles(log){
@@ -329,7 +333,7 @@ function renderLog(){
  if(selectedLogIndex!=null&&(!logs[selectedLogIndex]||!logMatchesFilters(logs[selectedLogIndex])))selectedLogIndex=null;
  const visibleLogs=logs.map((log,index)=>({log,index})).filter(item=>logMatchesFilters(item.log));
  list.innerHTML=visibleLogs.length
-   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"||log.type==="fixed"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(hideRoleNames(logText(log)))}</div>`).join("")
+   ?visibleLogs.map(({log,index})=>`<div class="logitem${log.type==="day"||log.type==="fixed"?" fixed-event":""}${index===selectedLogIndex?" selected":""}" onclick="selectLogLine(${index})"><span class="logtime">${esc(log.time)}</span>${highlightLogText(hideRoleNames(logText(log))).replace(/\n/g,"<br>")}</div>`).join("")
    :'<div class="logempty">Нет событий</div>';
  list.scrollTop=selectedLogIndex==null&&wasAtBottom?list.scrollHeight:keepTop;
 }
@@ -554,12 +558,12 @@ function updateEventHint(){
  }
  if(votingTargetId){
    eventHint.style.display="block";
-   eventHint.innerHTML=`Голосование за ${esc(playerName(votingTargetId))}: нажмите на карточку голосующего <button onclick="cancelVoting()">Завершить</button>`;
+   eventHint.innerHTML=`Голосование за ${esc(playerName(votingTargetId))}: отметьте тех, кто за <button onclick="cancelVoting()">Завершить</button>`;
    return;
  }
  if(!nominationSourceId){eventHint.style.display="none";eventHint.innerHTML="";return;}
  eventHint.style.display="block";
- eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует: нажмите на карточку цели на поле <button onclick="cancelNomination()">Отмена</button>`;
+ eventHint.innerHTML=`${esc(playerName(nominationSourceId))} назначает канцлером: нажмите на карточку цели на поле <button onclick="cancelNomination()">Отмена</button>`;
 }
 function startNomination(person){
  nominationSourceId=person.id;
