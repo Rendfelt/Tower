@@ -75,6 +75,8 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.card-icon{position:absolute;right:6px;top:4px;font-size:26px;line-height:1;text-shadow:0 1px 2px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35);pointer-events:none}
+.card-icon.icon-cross{color:#a01824;font-weight:bold;text-shadow:0 1px 0 rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35)}
 .role-confirmed{font-weight:bold;color:#1f7d36}
 .role-crossed{text-decoration:line-through;color:#7c7161}
 .panel .role-confirmed,.menu .role-confirmed{color:#78d084}
@@ -122,7 +124,7 @@ const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
-function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
+function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.icon=["heart","eye","cross","smile"].includes(p.icon)?p.icon:"";p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
 function roleIsCrossed(person,id){
@@ -143,8 +145,13 @@ function roleHtml(person,id){
 }
 function personRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>")||"<i>нет ролей</i>";}
 function cardRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>");}
+function cardIconHtml(person){
+ const icons={heart:"♥",eye:"👁",cross:"✕",smile:"☺"};
+ if(!person.icon||!icons[person.icon])return "";
+ return `<span class="card-icon icon-${person.icon}">${icons[person.icon]}</span>`;
+}
 function cardHtml(person,votes){
- return "<b>"+playerTitle(person)+(votes.includes(person.id)?" ✋":"")+"</b>"
+ return cardIconHtml(person)+"<b>"+playerTitle(person)+(votes.includes(person.id)?" ✋":"")+"</b>"
    +(person.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"")
    +cardRolesHtml(person);
 }
@@ -745,6 +752,9 @@ function fillCardMenu(person,menu){
  let colorBtn=document.createElement("button");
  colorBtn.textContent="Цвет плашки";
  colorBtn.onclick=()=>openColorEditor(person,menu);
+ let iconBtn=document.createElement("button");
+ iconBtn.textContent="Иконка";
+ iconBtn.onclick=()=>openIconEditor(person,menu);
  let confirmBtn=document.createElement("button");
  confirmBtn.textContent="Добавить подтвержденную роль";
  confirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu,"add");
@@ -754,7 +764,7 @@ function fillCardMenu(person,menu){
  let deleteBtn=document.createElement("button");
  deleteBtn.textContent="Удалить игрока";
  deleteBtn.onclick=()=>deletePerson(person);
- menu.append(roleBtn,nominateBtn,conversationBtn,statsBtn,confirmBtn,deadBtn,colorBtn,filterBtn,unconfirmBtn,deleteBtn);
+ menu.append(roleBtn,nominateBtn,conversationBtn,statsBtn,confirmBtn,deadBtn,colorBtn,iconBtn,filterBtn,unconfirmBtn,deleteBtn);
 }
 
 function setPlayerColor(person,color){
@@ -808,6 +818,27 @@ function openColorEditor(person,menu){
    let b=document.createElement("button");
    b.textContent=(person.color===color?"✓ ":"")+title;
    b.onclick=()=>setPlayerColor(person,color);
+   menu.append(b);
+ });
+ let back=document.createElement("button");
+ back.textContent="Назад";
+ back.onclick=()=>fillCardMenu(person,menu);
+ menu.append(back);
+ fitCardMenu(menu._card,menu);
+}
+
+function setPlayerIcon(person,icon){
+ person.icon=icon;
+ save();
+ render();
+}
+
+function openIconEditor(person,menu){
+ menu.innerHTML="";
+ [["heart","♥ Сердечко"],["eye","👁 Глаз"],["cross","✕ Красный косой крест"],["smile","☺ Смайлик"],["","Без иконки"]].forEach(([icon,title])=>{
+   let b=document.createElement("button");
+   b.textContent=(person.icon===icon?"✓ ":"")+title;
+   b.onclick=()=>setPlayerIcon(person,icon);
    menu.append(b);
  });
  let back=document.createElement("button");
