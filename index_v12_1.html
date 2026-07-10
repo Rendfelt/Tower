@@ -75,11 +75,12 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
-.card-icon{position:absolute;right:6px;top:4px;font-size:26px;line-height:1;text-shadow:0 1px 2px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35);pointer-events:none}
+.card-icons{position:absolute;right:6px;top:4px;display:flex;flex-direction:row-reverse;align-items:center;gap:5px;line-height:1;pointer-events:none}
+.card-icon{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35)}
+.card-icon.icon-heart{color:#d82032}
+.card-icon.icon-smile{color:#f2bd22}
+.card-icon.icon-eye{font-size:22px;min-width:30px}
 .card-icon.icon-cross{color:#a01824;font-weight:bold;text-shadow:0 1px 0 rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35)}
-.card-icon:nth-child(2){right:30px}
-.card-icon:nth-child(3){right:54px}
-.card-icon:nth-child(4){right:78px}
 .role-confirmed{font-weight:bold;color:#1f7d36}
 .role-crossed{text-decoration:line-through;color:#7c7161}
 .panel .role-confirmed,.menu .role-confirmed{color:#78d084}
@@ -151,8 +152,9 @@ function roleHtml(person,id){
 function personRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>")||"<i>нет ролей</i>";}
 function cardRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>");}
 function cardIconHtml(person){
- const icons={heart:"♥",eye:"👁",cross:"✕",smile:"☺"};
- return (person.icons||[]).map(icon=>icons[icon]?`<span class="card-icon icon-${icon}">${icons[icon]}</span>`:"").join("");
+ const icons={heart:"❤",eye:"👁️",cross:"✕",smile:"🙂"};
+ const html=(person.icons||[]).map(icon=>icons[icon]?`<span class="card-icon icon-${icon}">${icons[icon]}</span>`:"").join("");
+ return html?`<span class="card-icons">${html}</span>`:"";
 }
 function cardHtml(person,votes){
  return cardIconHtml(person)+"<b>"+playerTitle(person)+(votes.includes(person.id)?" ✋":"")+"</b>"
@@ -840,7 +842,7 @@ function setPlayerIcon(person,icon,enabled){
 
 function openIconEditor(person,menu){
  menu.innerHTML="";
- [["heart","♥ Сердечко"],["eye","👁 Глаз"],["cross","✕ Красный косой крест"],["smile","☺ Смайлик"]].forEach(([icon,title])=>{
+ [["heart","❤ Сердечко"],["eye","👁️ Глаз"],["cross","✕ Красный косой крест"],["smile","🙂 Смайлик"]].forEach(([icon,title])=>{
    let label=document.createElement("label");
    label.className="icon-check";
    let cb=document.createElement("input");
