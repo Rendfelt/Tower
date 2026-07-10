@@ -75,6 +75,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.card.has-icons{padding-top:32px}
 .card-icon{position:absolute;right:6px;top:4px;font-size:26px;line-height:1;text-shadow:0 1px 2px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35);pointer-events:none}
 .card-icon.icon-cross{color:#a01824;font-weight:bold;text-shadow:0 1px 0 rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35)}
 .card-icon:nth-child(2){right:30px}
@@ -169,6 +170,7 @@ function refreshRoleViews(){
    const person=people.find(p=>p.id===+card.dataset.id);
    if(person){
      const menu=card.querySelector(".menu");
+     card.classList.toggle("has-icons",(person.icons||[]).length>0);
      card.innerHTML=cardHtml(person,votes);
      if(menu)card.append(menu);
    }
@@ -704,6 +706,7 @@ people.forEach(p=>{
  card.className="card";
  card.dataset.id=p.id;
  card.classList.add("color-"+(p.color||"blue"));
+ if((p.icons||[]).length)card.classList.add("has-icons");
  if(p.dead)card.classList.add("dead");
  if(p.id===conversationSourceId)card.classList.add("conversation-source");
  else if(conversationSourceId)card.classList.add("conversation-target");
