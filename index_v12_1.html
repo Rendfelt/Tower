@@ -538,6 +538,30 @@ function currentVotingLog(){
 function currentVotes(){
  return currentVotingLog()?.votes||[];
 }
+function playerStats(person){
+ const id=person.id;
+ return logs.reduce((stats,log)=>{
+   if(log.type==="nomination"){
+     if(log.sourceId===id)stats.nominated++;
+     if(log.targetId===id)stats.wasNominated++;
+     if((log.votes||[]).includes(id))stats.voted++;
+   }
+   if(log.type==="conversation"&&(log.sourceId===id||(log.targetIds||[]).includes(id)))stats.conversations++;
+   return stats;
+ },{nominated:0,wasNominated:0,conversations:0,voted:0});
+}
+function showPlayerStats(person){
+ closeAllMenus();
+ if(!window.eventHint)return;
+ const stats=playerStats(person);
+ eventHint.style.display="block";
+ eventHint.innerHTML=`<b>${playerTitle(person)}</b><br>Номинировал: ${stats.nominated}<br>Номинирован: ${stats.wasNominated}<br>Приватных разговоров: ${stats.conversations}<br>Голосовал: ${stats.voted} <button onclick="hidePlayerStats()">Закрыть</button>`;
+}
+function hidePlayerStats(){
+ if(!window.eventHint)return;
+ eventHint.style.display="none";
+ eventHint.innerHTML="";
+}
 function updateEventHint(){
  if(!window.eventHint)return;
  if(conversationSourceId){
@@ -712,6 +736,9 @@ function fillCardMenu(person,menu){
  let conversationBtn=document.createElement("button");
  conversationBtn.textContent="Общение";
  conversationBtn.onclick=()=>startConversation(person);
+ let statsBtn=document.createElement("button");
+ statsBtn.textContent="Статистика";
+ statsBtn.onclick=()=>showPlayerStats(person);
  let deadBtn=document.createElement("button");
  deadBtn.textContent=person.dead?"Сделать живым":"Сделать мертвым";
  deadBtn.onclick=()=>person.dead?toggleDead(person):openDeathEditor(person,menu);
@@ -727,7 +754,7 @@ function fillCardMenu(person,menu){
  let deleteBtn=document.createElement("button");
  deleteBtn.textContent="Удалить игрока";
  deleteBtn.onclick=()=>deletePerson(person);
- menu.append(roleBtn,nominateBtn,conversationBtn,confirmBtn,deadBtn,colorBtn,filterBtn,unconfirmBtn,deleteBtn);
+ menu.append(roleBtn,nominateBtn,conversationBtn,statsBtn,confirmBtn,deadBtn,colorBtn,filterBtn,unconfirmBtn,deleteBtn);
 }
 
 function setPlayerColor(person,color){
