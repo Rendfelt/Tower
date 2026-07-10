@@ -77,6 +77,9 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
 .card-icon{position:absolute;right:6px;top:4px;font-size:26px;line-height:1;text-shadow:0 1px 2px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35);pointer-events:none}
 .card-icon.icon-cross{color:#a01824;font-weight:bold;text-shadow:0 1px 0 rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35)}
+.card-icon:nth-child(2){right:30px}
+.card-icon:nth-child(3){right:54px}
+.card-icon:nth-child(4){right:78px}
 .role-confirmed{font-weight:bold;color:#1f7d36}
 .role-crossed{text-decoration:line-through;color:#7c7161}
 .panel .role-confirmed,.menu .role-confirmed{color:#78d084}
@@ -88,6 +91,8 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .menu label{display:block;margin:8px 0;}
 .role-check{display:flex!important;align-items:flex-start;gap:10px;min-height:44px;font-size:21px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
 .role-check input{flex:0 0 auto;width:24px;height:24px}
+.icon-check{display:flex!important;align-items:center;gap:10px;min-height:44px;font-size:21px}
+.icon-check input{flex:0 0 auto;width:24px;height:24px}
 .role-row{display:flex;align-items:flex-start;gap:8px;margin:6px 0;position:relative}
 .role-row button{min-height:40px;font-size:20px;padding:7px 12px}
 .role-menu{display:none;position:absolute;left:0;top:44px;background:linear-gradient(180deg,#2c1645,#13091f);border:1px solid rgba(216,200,239,.55);border-radius:8px;padding:7px;z-index:20;box-shadow:0 8px 18px rgba(0,0,0,.5);min-width:190px}
@@ -124,7 +129,7 @@ const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
-function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.icon=["heart","eye","cross","smile"].includes(p.icon)?p.icon:"";p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
+function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.icons=Array.isArray(p.icons)?p.icons:(p.icon?[p.icon]:[]);p.icons=p.icons.filter(icon=>["heart","eye","cross","smile"].includes(icon));delete p.icon;p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
 function roleIsCrossed(person,id){
@@ -147,8 +152,7 @@ function personRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)
 function cardRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>");}
 function cardIconHtml(person){
  const icons={heart:"♥",eye:"👁",cross:"✕",smile:"☺"};
- if(!person.icon||!icons[person.icon])return "";
- return `<span class="card-icon icon-${person.icon}">${icons[person.icon]}</span>`;
+ return (person.icons||[]).map(icon=>icons[icon]?`<span class="card-icon icon-${icon}">${icons[icon]}</span>`:"").join("");
 }
 function cardHtml(person,votes){
  return cardIconHtml(person)+"<b>"+playerTitle(person)+(votes.includes(person.id)?" ✋":"")+"</b>"
@@ -827,24 +831,25 @@ function openColorEditor(person,menu){
  fitCardMenu(menu._card,menu);
 }
 
-function setPlayerIcon(person,icon){
- person.icon=icon;
+function setPlayerIcon(person,icon,enabled){
+ const icons=person.icons||[];
+ person.icons=enabled?[...new Set([...icons,icon])]:icons.filter(value=>value!==icon);
  save();
- render();
+ refreshRoleViews();
 }
 
 function openIconEditor(person,menu){
  menu.innerHTML="";
- [["heart","♥ Сердечко"],["eye","👁 Глаз"],["cross","✕ Красный косой крест"],["smile","☺ Смайлик"],["","Без иконки"]].forEach(([icon,title])=>{
-   let b=document.createElement("button");
-   b.textContent=(person.icon===icon?"✓ ":"")+title;
-   b.onclick=()=>setPlayerIcon(person,icon);
-   menu.append(b);
+ [["heart","♥ Сердечко"],["eye","👁 Глаз"],["cross","✕ Красный косой крест"],["smile","☺ Смайлик"]].forEach(([icon,title])=>{
+   let label=document.createElement("label");
+   label.className="icon-check";
+   let cb=document.createElement("input");
+   cb.type="checkbox";
+   cb.checked=(person.icons||[]).includes(icon);
+   cb.onchange=()=>setPlayerIcon(person,icon,cb.checked);
+   label.append(cb,document.createTextNode(title));
+   menu.append(label);
  });
- let back=document.createElement("button");
- back.textContent="Назад";
- back.onclick=()=>fillCardMenu(person,menu);
- menu.append(back);
  fitCardMenu(menu._card,menu);
 }
 
