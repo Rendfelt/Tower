@@ -584,7 +584,11 @@ function deletePerson(person){
  save();
  render();
 }
-function playerTitle(person){return `${person.dead?"☠ ":""}${esc(person.name)}`;}
+function deathIcon(person){
+ if(!person.dead)return "";
+ return ({executed:"⚖",night:"☾",unclear:"?",ability:"✦"})[person.deathReason]||"☠";
+}
+function playerTitle(person){return `${person.dead?deathIcon(person)+" ":""}${esc(person.name)}`;}
 function toggleDead(person,reason,abilityRole){
  person.dead=!person.dead;
  person.deathReason=person.dead?reason||"unclear":"";
