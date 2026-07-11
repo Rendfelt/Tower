@@ -29,6 +29,9 @@ body{font-family:"Alegreya SC",Georgia,serif;font-size:22px;margin:0;line-height
 p{margin:0 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .wrap{display:flex;gap:20px;align-items:flex-start;margin:14px 0 8px;width:1040px;position:relative;min-height:0}
 details.panel{width:300px;margin-bottom:12px;background:linear-gradient(180deg,rgba(72,29,109,.95),rgba(22,10,37,.98));border:1px solid var(--line);border-radius:8px;padding:8px 10px;box-shadow:0 8px 22px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.12)}
+details.system-panel{width:1000px;margin:0 20px 12px}
+details.system-panel .top-area{width:auto}
+details.system-panel .wrap{width:auto;margin:14px 0 0}
 details.log-panel{width:1000px;margin:14px 20px 0}
 .logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 10px 0}
 .logcomposer input,.logcomposer select,.logcomposer button{font-size:20px;padding:9px 10px}
@@ -128,7 +131,7 @@ input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:tex
 input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 </style><body>
 
-<div class=top-area><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt="">
+<details class="panel system-panel"><summary>Система</summary><div class=top-area><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt="">
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
 <p><input id=rname placeholder="Роль"><button onclick="addRole()">Добавить роль</button><select id=rtype><option value="горожанин">горожанин</option><option value="изгой">изгой</option><option value="приспешник">приспешник</option><option value="демон">демон</option></select></p>
 <div class=lock-toggle-row><label class=switch><input id=fieldLockToggle type=checkbox onchange="setFieldLocked(this.checked)"><span class=switch-track></span><span class=switch-label>Зафиксировать поле</span></label></div>
@@ -137,7 +140,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <button onclick="resetState()">Сброс</button>
 <input id="imp" type=file accept=".json" hidden></p></div>
 
-<div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div>
+<div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details>
 <div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
