@@ -80,6 +80,10 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
+.world-tabs{width:1000px;margin:0 20px 8px;display:flex;align-items:flex-end;gap:6px}
+.world-tab{min-height:38px;padding:7px 14px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,rgba(72,29,109,.95),rgba(22,10,37,.98));border:1px solid var(--line);border-bottom-color:#9d6bd5;color:#fff8ee;font-size:20px;text-transform:none;text-shadow:none}
+.world-tab.active{background:linear-gradient(180deg,#f4d36f,#8f5b16);border-color:var(--gold);color:#1c0f05}
+.world-tab.add{min-width:42px;text-align:center;font-weight:bold}
 .lock-toggle-row{margin:-2px 0 10px;display:flex;align-items:center;gap:10px;color:var(--ink)}
 .switch{position:relative;display:inline-flex;align-items:center;gap:10px;min-height:38px;cursor:pointer}
 .switch input{position:absolute;opacity:0;width:1px;height:1px}
@@ -145,11 +149,11 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
-<div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
 const activeTouchPointers=new Set();
 function cancelAllCardGestures(){
  document.querySelectorAll(".card").forEach(card=>{
@@ -162,6 +166,12 @@ const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).leng
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 const ROLE_TYPES=["горожанин","изгой","приспешник","демон"];
 function normalizeRoles(){roles.forEach(r=>{r.type=ROLE_TYPES.includes(r.type)?r.type:"горожанин";});}
+function normalizeWorlds(){
+ worlds=Array.isArray(worlds)?worlds:[];
+ if(!worlds.length)worlds=[{id:1,name:"Основной"}];
+ worlds=worlds.map((w,i)=>({id:Number.isFinite(w.id)?w.id:i+1,name:w.name||`Мир ${i+1}`}));
+ if(!worlds.some(w=>w.id===currentWorldId))currentWorldId=worlds[0].id;
+}
 function forEachRoleByType(callback){
  let hasPreviousType=false;
  ROLE_TYPES.forEach(type=>{
@@ -223,7 +233,7 @@ function refreshRoleViews(){
  });
  renderLog();
 }
-function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,pid,rid,dayNumber,fieldLocked}));}
+function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
  logs.push({time:logTime(),text});
@@ -479,9 +489,9 @@ function addCustomLogEvent(){
  input.value="";
  input._meta={playerIds:[],roleIds:[]};
 }
-(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;fieldLocked=!!d.fieldLocked}catch{}}normalizeRoles();normalizePeople();})();
+(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked}catch{}}normalizeRoles();normalizeWorlds();normalizePeople();})();
 async function exportJson(){
- const data=JSON.stringify({people,roles,logs,pid,rid,dayNumber,fieldLocked},null,2);
+ const data=JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked},null,2);
  const blob=new Blob([data],{type:"application/json"});
  if(window.showSaveFilePicker){
    try{
@@ -504,8 +514,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной"}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -744,6 +754,19 @@ function cancelConversation(){
  conversationTargetIds=[];
  render();
 }
+function selectWorld(id){
+ currentWorldId=id;
+ closeAllMenus();
+ save();
+ render();
+}
+function addWorld(){
+ const nextId=Math.max(0,...worlds.map(w=>w.id))+1;
+ worlds.push({id:nextId,name:`Мир ${worlds.length+1}`});
+ currentWorldId=nextId;
+ save();
+ render();
+}
 function setFieldLocked(locked){
  fieldLocked=!!locked;
  closeAllMenus();
@@ -753,6 +776,7 @@ function setFieldLocked(locked){
 
 function render(){
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
+renderWorldTabs();
 const fieldLockToggle=$("fieldLockToggle");
 if(fieldLockToggle)fieldLockToggle.checked=fieldLocked;
 field.classList.toggle("log-selected",selectedLogIndex!=null);
@@ -846,6 +870,24 @@ people.forEach(p=>{
 
  field.append(card);
 });
+}
+
+function renderWorldTabs(){
+ const tabs=$("worldTabs");
+ if(!tabs)return;
+ tabs.innerHTML="";
+ worlds.forEach(w=>{
+   let b=document.createElement("button");
+   b.className="world-tab"+(w.id===currentWorldId?" active":"");
+   b.textContent=w.name;
+   b.onclick=()=>selectWorld(w.id);
+   tabs.append(b);
+ });
+ let add=document.createElement("button");
+ add.className="world-tab add";
+ add.textContent="+";
+ add.onclick=addWorld;
+ tabs.append(add);
 }
 
 function fillCardMenu(person,menu){
