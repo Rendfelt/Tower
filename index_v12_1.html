@@ -309,26 +309,50 @@ function cardHtml(person,votes){
 function separateStatCards(){
  if(!isDeathOnlyWorld())return;
  const gap=2;
- const cards=[...field.querySelectorAll(".card")].map(card=>({card,person:people.find(p=>p.id===+card.dataset.id)})).filter(item=>item.person);
- for(let pass=0;pass<8;pass++){
-   let moved=false;
-   for(let i=0;i<cards.length;i++){
-     for(let j=i+1;j<cards.length;j++){
-       const a=cards[i],b=cards[j];
-       const ax=a.person.x,ay=a.person.y,aw=a.card.offsetWidth,ah=a.card.offsetHeight;
-       const bx=b.person.x,by=b.person.y,bw=b.card.offsetWidth,bh=b.card.offsetHeight;
-       const overlapX=Math.min(ax+aw+gap,bx+bw+gap)-Math.max(ax,bx);
-       const overlapY=Math.min(ay+ah+gap,by+bh+gap)-Math.max(ay,by);
-       if(overlapX<=0||overlapY<=0)continue;
-       if(overlapX<overlapY)b.person.x=Math.min(Math.max(0,field.clientWidth-bw),b.person.x+overlapX);
-       else b.person.y=Math.min(Math.max(0,field.clientHeight-bh),b.person.y+overlapY);
-       b.card.style.left=b.person.x+"px";
-       b.card.style.top=b.person.y+"px";
-       moved=true;
+ const placed=[];
+ const cards=[...field.querySelectorAll(".card")].map(card=>{
+   const person=people.find(p=>p.id===+card.dataset.id);
+   return person?{card,person,x:person.x||0,y:person.y||0,w:card.offsetWidth,h:card.offsetHeight}:null;
+ }).filter(Boolean).sort((a,b)=>a.y-b.y||a.x-b.x);
+ const overlaps=(candidate)=>placed.some(item=>candidate.x<item.x+item.w+gap&&candidate.x+candidate.w+gap>item.x&&candidate.y<item.y+item.h+gap&&candidate.y+candidate.h+gap>item.y);
+ const clampCandidate=(item,x,y)=>({
+   x:Math.min(Math.max(0,x),Math.max(0,field.clientWidth-item.w)),
+   y:Math.min(Math.max(0,y),Math.max(0,field.clientHeight-item.h)),
+   w:item.w,
+   h:item.h
+ });
+ cards.forEach(item=>{
+   let best=clampCandidate(item,item.x,item.y);
+   let bestScore=overlaps(best)?Infinity:0;
+   const maxRadius=Math.max(field.clientWidth,field.clientHeight);
+   for(let radius=8;bestScore===Infinity&&radius<=maxRadius;radius+=8){
+     for(let dx=-radius;dx<=radius;dx+=8){
+       const candidates=[
+         clampCandidate(item,item.x+dx,item.y-radius),
+         clampCandidate(item,item.x+dx,item.y+radius)
+       ];
+       candidates.forEach(candidate=>{
+         if(overlaps(candidate))return;
+         const score=(candidate.x-item.x)**2+(candidate.y-item.y)**2;
+         if(score<bestScore){best=candidate;bestScore=score;}
+       });
+     }
+     for(let dy=-radius+8;dy<=radius-8;dy+=8){
+       const candidates=[
+         clampCandidate(item,item.x-radius,item.y+dy),
+         clampCandidate(item,item.x+radius,item.y+dy)
+       ];
+       candidates.forEach(candidate=>{
+         if(overlaps(candidate))return;
+         const score=(candidate.x-item.x)**2+(candidate.y-item.y)**2;
+         if(score<bestScore){best=candidate;bestScore=score;}
+       });
      }
    }
-   if(!moved)break;
- }
+   item.card.style.left=best.x+"px";
+   item.card.style.top=best.y+"px";
+   placed.push(best);
+ });
 }
 function refreshRoleViews(){
  const votes=currentVotes();
