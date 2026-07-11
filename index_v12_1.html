@@ -75,7 +75,6 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
-.field-filter-btn{position:absolute;left:12px;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
 .lock-toggle-row{margin:-2px 0 10px;display:flex;align-items:center;gap:10px;color:var(--ink)}
 .switch{position:relative;display:inline-flex;align-items:center;gap:10px;min-height:38px;cursor:pointer}
 .switch input{position:absolute;opacity:0;width:1px;height:1px}
@@ -747,11 +746,6 @@ const fieldLockToggle=$("fieldLockToggle");
 if(fieldLockToggle)fieldLockToggle.checked=fieldLocked;
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
-let filterFieldBtn=document.createElement("button");
-filterFieldBtn.className="field-filter-btn";
-filterFieldBtn.textContent="Фильтр";
-filterFieldBtn.onclick=e=>{e.stopPropagation();startPlayerFilterFromField();};
-field.append(filterFieldBtn);
 let dayBadge=document.createElement("div");
 dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
@@ -846,12 +840,9 @@ people.forEach(p=>{
 function fillCardMenu(person,menu){
  menu.innerHTML="";
  menu.classList.remove("role-choice-menu");
- let roleBtn=document.createElement("button");
- roleBtn.textContent="Назначить роли";
- roleBtn.onclick=()=>openRoleEditor(person,menu);
- let conversationBtn=document.createElement("button");
- conversationBtn.textContent="Общение";
- conversationBtn.onclick=()=>startConversation(person);
+ let filterBtn=document.createElement("button");
+ filterBtn.textContent="Фильтровать";
+ filterBtn.onclick=()=>filterLogByPlayer(person);
  let deadBtn=document.createElement("button");
  deadBtn.textContent=person.dead?"Сделать живым":"Сделать мертвым";
  deadBtn.onclick=()=>person.dead?toggleDead(person):openDeathEditor(person,menu);
@@ -861,13 +852,10 @@ function fillCardMenu(person,menu){
  let iconBtn=document.createElement("button");
  iconBtn.textContent="Иконка";
  iconBtn.onclick=()=>openIconEditor(person,menu);
- let confirmBtn=document.createElement("button");
- confirmBtn.textContent="Проверенная роль";
- confirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu);
  let unconfirmBtn=document.createElement("button");
  unconfirmBtn.textContent="Снять проверенную роль";
  unconfirmBtn.onclick=()=>{removeConfirmedRole(person);closeAllMenus();};
- menu.append(roleBtn,conversationBtn,confirmBtn,deadBtn,colorBtn,iconBtn,unconfirmBtn);
+ menu.append(filterBtn,deadBtn,colorBtn,iconBtn,unconfirmBtn);
 }
 
 function setPlayerColor(person,color){
@@ -1121,6 +1109,9 @@ function setupCardInteractions(card,menu,p){
        startConversation(p);
      }else if(dx<-SWIPE_LIMIT && Math.abs(dx)>Math.abs(dy)*1.4){
        chooseNominationSource(p);
+     }else if(dx>SWIPE_LIMIT && Math.abs(dx)>Math.abs(dy)*1.4){
+       openCardMenu(card,menu);
+       openConfirmedRoleEditor(p,menu);
      }else if(!moved){
        openCardMenu(card,menu);
      }
