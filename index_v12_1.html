@@ -97,6 +97,8 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .stats-panel{display:none;width:1000px;box-sizing:border-box;margin:14px 20px 0;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .stats-panel b{font-family:"Gabriela",Georgia,serif;color:#1c0f05}
 .stats-panel button{margin-left:10px;min-height:36px;padding:6px 10px;font-size:18px}
+.stat-line{display:block;border:1px solid transparent;border-radius:5px;padding:1px 4px;margin:1px 0}
+.stat-line.alert{border-color:#b51624}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
 .card-icons{position:absolute;right:6px;top:4px;display:flex;flex-direction:row-reverse;align-items:center;gap:5px;line-height:1;pointer-events:none}
 .card-icon{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35)}
@@ -259,9 +261,32 @@ function roleHtml(person,id){
 }
 function personRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>")||"<i>нет ролей</i>";}
 function cardRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>");}
+function bottomStatIds(all,metric,count=3){
+ return all.slice().sort((a,b)=>a.stats[metric]-b.stats[metric]||a.person.name.localeCompare(b.person.name,"ru")).slice(0,count).map(item=>item.person.id);
+}
+function statAlertIds(metric,threshold){
+ const all=people.map(person=>({person,stats:playerStats(person)}));
+ if(metric==="conversations")return all.filter(item=>item.stats.conversations>0).sort((a,b)=>b.stats.conversations-a.stats.conversations||a.person.name.localeCompare(b.person.name,"ru")).slice(0,2).map(item=>item.person.id);
+ const direct=all.filter(item=>item.stats[metric]<=threshold).map(item=>item.person.id);
+ return direct.length?direct:bottomStatIds(all,metric);
+}
+function statLine(label,value,alert){
+ return `<span class="stat-line${alert?" alert":""}">${label}: ${value}</span>`;
+}
 function playerStatsHtml(person){
  const stats=playerStats(person);
- return `Номинировал: ${stats.nominated}<br>Номинирован: ${stats.wasNominated}<br>Приватных разговоров: ${stats.conversations}<br>Голосовал: ${stats.voted}`;
+ const alerts={
+   nominated:statAlertIds("nominated",0).includes(person.id),
+   wasNominated:statAlertIds("wasNominated",0).includes(person.id),
+   conversations:statAlertIds("conversations",0).includes(person.id),
+   voted:statAlertIds("voted",1).includes(person.id)
+ };
+ return [
+   statLine("Номинировал",stats.nominated,alerts.nominated),
+   statLine("Номинирован",stats.wasNominated,alerts.wasNominated),
+   statLine("Разговоры",stats.conversations,alerts.conversations),
+   statLine("Голосовал",stats.voted,alerts.voted)
+ ].join("");
 }
 function playerDetailsHtml(person){return isDeathOnlyWorld()?playerStatsHtml(person):personRolesHtml(person);}
 function cardDetailsHtml(person){return isDeathOnlyWorld()?playerStatsHtml(person):cardRolesHtml(person);}
@@ -717,7 +742,7 @@ function renderPlayerStatsPanel(){
  if(!panel||!person){if(panel){panel.style.display="none";panel.innerHTML="";}return;}
  const stats=playerStats(person);
  panel.style.display="block";
- panel.innerHTML=`<b>${playerTitle(person)}</b><br>Номинировал: ${stats.nominated}<br>Номинирован: ${stats.wasNominated}<br>Приватных разговоров: ${stats.conversations}<br>Голосовал: ${stats.voted} <button onclick="clearPlayerFilter()">Сбросить</button>`;
+ panel.innerHTML=`<b>${playerTitle(person)}</b><br>Номинировал: ${stats.nominated}<br>Номинирован: ${stats.wasNominated}<br>Разговоры: ${stats.conversations}<br>Голосовал: ${stats.voted} <button onclick="clearPlayerFilter()">Сбросить</button>`;
 }
 function startPlayerFilterFromField(){
  filterPickPlayer=true;
