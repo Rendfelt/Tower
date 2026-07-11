@@ -34,7 +34,7 @@ details.system-panel{width:max-content;min-width:220px;margin:0;position:relativ
 details.system-panel .top-area{width:auto}
 details.system-panel .wrap{width:auto;margin:14px 0 0}
 details.log-panel{width:1000px;margin:14px 20px 0}
-body.stat-world .system-header,body.stat-world details.log-panel,body.stat-world .event-hint,body.stat-world .world-tabs,body.stat-world .stats-panel{width:1200px}
+body.stat-world .system-header,body.stat-world details.log-panel,body.stat-world .world-tabs,body.stat-world .stats-panel{width:1200px}
 body.stat-world #field{width:1200px;height:1200px}
 body.stat-world .field-wrap{width:1200px}
 .logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 10px 0}
@@ -84,7 +84,10 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .log-selected .card{opacity:.45;filter:saturate(.72)}
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
-.event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
+.event-hint{display:none}
+.field-event-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:8;max-width:min(760px,calc(100% - 60px));box-sizing:border-box;padding:24px 30px;border:2px solid var(--gold);border-radius:10px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;box-shadow:0 8px 24px rgba(0,0,0,.42);font-size:24px;text-align:center}
+.field-event-hint{touch-action:manipulation}
+.field-event-hint button{margin-left:12px;min-height:42px;font-size:22px;padding:8px 14px}
 .world-tabs{width:1000px;margin:0 20px 8px;display:flex;align-items:flex-end;gap:6px}
 .world-tab{min-height:38px;padding:7px 14px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,rgba(72,29,109,.95),rgba(22,10,37,.98));border:1px solid var(--line);border-bottom-color:#9d6bd5;color:#fff8ee;font-size:20px;text-transform:none;text-shadow:none}
 .world-tab.active{background:linear-gradient(180deg,#f4d36f,#8f5b16);border-color:var(--gold);color:#1c0f05}
@@ -800,28 +803,24 @@ function startPlayerFilterFromField(){
 }
 function updateEventHint(){
  if(!window.eventHint)return;
+ eventHint.style.display="none";
  if(conversationSourceId){
-   eventHint.style.display="block";
    eventHint.innerHTML=`${esc(playerName(conversationSourceId))} общается: нажмите на одну карточку собеседника <button onclick="cancelConversation()">Отмена</button>`;
    return;
  }
  if(votingTargetId){
-   eventHint.style.display="block";
    eventHint.innerHTML=`Голосование за ${esc(playerName(votingTargetId))}: нажмите на карточку голосующего <button onclick="cancelVoting()">Завершить</button>`;
    return;
  }
  if(nominationPickSource){
-   eventHint.style.display="block";
    eventHint.innerHTML=`Номинация: нажмите на карточку игрока, который номинирует <button onclick="cancelNomination()">Отмена</button>`;
    return;
  }
  if(filterPickPlayer){
-   eventHint.style.display="block";
    eventHint.innerHTML=`Фильтр: нажмите на карточку игрока <button onclick="cancelPlayerFilterPick()">Отмена</button>`;
    return;
  }
  if(!nominationSourceId){eventHint.style.display="none";eventHint.innerHTML="";return;}
- eventHint.style.display="block";
  eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует: нажмите на карточку цели на поле <button onclick="cancelNomination()">Отмена</button>`;
 }
 function chooseNominationSource(person){
@@ -946,6 +945,13 @@ dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
 dayBadge.textContent=`День ${dayNumber}`;
 field.append(dayBadge);
+if(eventHint.innerHTML){
+ let fieldHint=document.createElement("div");
+ fieldHint.className="field-event-hint";
+ fieldHint.innerHTML=eventHint.innerHTML;
+ fieldHint.addEventListener("pointerdown",e=>e.stopPropagation());
+ field.append(fieldHint);
+}
 roles.forEach(r=>{
  let li=document.createElement("li");
  let row=document.createElement("div");
