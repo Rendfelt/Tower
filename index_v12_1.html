@@ -34,6 +34,9 @@ details.system-panel{width:max-content;min-width:220px;margin:0;position:relativ
 details.system-panel .top-area{width:auto}
 details.system-panel .wrap{width:auto;margin:14px 0 0}
 details.log-panel{width:1000px;margin:14px 20px 0}
+body.stat-world .system-header,body.stat-world details.log-panel,body.stat-world .event-hint,body.stat-world .world-tabs,body.stat-world .stats-panel{width:1200px}
+body.stat-world #field{width:1200px;height:1200px}
+body.stat-world .field-wrap{width:1200px}
 .logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 10px 0}
 .logcomposer input,.logcomposer select,.logcomposer button{font-size:20px;padding:9px 10px}
 .logfilters{display:flex;gap:8px;margin:0 0 10px 0}
@@ -949,6 +952,7 @@ function setFieldLocked(locked){
 }
 
 function render(){
+document.body.classList.toggle("stat-world",isDeathOnlyWorld());
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 renderWorldTabs();
 const fieldLockToggle=$("fieldLockToggle");
