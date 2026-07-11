@@ -333,7 +333,7 @@ function logsForDay(day){
    return current===day;
  });
 }
-let speechQueue=[],speechQueueTimer=null,speechQueueDone=null,speechNext=null,speechCurrentItem=null,speechPaused=false,speechSuppressEnd=false,speechPlaybackDay=0,speechPlaybackLogs=[],speechPlaybackIndex=0;
+let speechQueue=[],speechQueueTimer=null,speechQueueDone=null,speechNext=null,speechCurrentItem=null,speechPaused=false,speechSuppressEnd=false,speechPlaybackMode="day",speechPlaybackDay=0,speechPlaybackLogs=[],speechPlaybackIndex=0,speechPlayerEntries=[],speechPlayerIndex=0,speechPlayerId=0;
 function speakText(text,onend){
  if(!("speechSynthesis" in window)||!window.SpeechSynthesisUtterance)return;
  const utterance=new SpeechSynthesisUtterance(text);
@@ -387,6 +387,7 @@ function speechItemsForLog(log){
  return [{text:logText(log),pause:1300}];
 }
 function prepareSpeechDay(day){
+ speechPlaybackMode="day";
  speechPlaybackDay=day;
  speechPlaybackLogs=logsForDay(day);
 }
@@ -413,19 +414,34 @@ function speakSelectedDayHistory(){
  if(speechPaused){resumeSpeech();return;}
  speakDayHistory(+($("speechDaySelect")?.value||dayNumber||0));
 }
-function speechItemsForPlayer(playerId){
- const items=[];
+function speechEntriesForPlayer(playerId){
+ const entries=[];
  let currentDay=0,lastSpokenDay=null;
  logs.forEach(log=>{
    if(log.type==="day"){currentDay=Number.isFinite(log.day)?log.day:currentDay+1;return;}
    if(!logPlayers(log).includes(playerId))return;
    if(currentDay!==lastSpokenDay){
-     items.push({text:`День ${currentDay}`,pause:900});
+     entries.push({type:"day",day:currentDay});
      lastSpokenDay=currentDay;
    }
-   items.push(...speechItemsForLog(log),{text:"",pause:600});
+   entries.push({type:"log",day:currentDay,log});
  });
- return items.length?items:[{text:`Событий по игроку ${playerName(playerId)} нет`,pause:0}];
+ return entries;
+}
+function speechItemsForEntry(entry){
+ if(!entry)return [];
+ if(entry.type==="day")return [{text:`День ${entry.day}`,pause:900}];
+ return [...speechItemsForLog(entry.log),{text:"",pause:600}];
+}
+function playPlayerSpeechEntry(index){
+ if(!speechPlayerEntries.length){speakQueue([{text:`Событий по игроку ${playerName(speechPlayerId)} нет`,pause:0}]);return;}
+ if(index<0){speakQueue([{text:"Начало списка",pause:0}]);return;}
+ if(index>=speechPlayerEntries.length){speakQueue([{text:"Конец списка",pause:0}]);return;}
+ speechPlaybackMode="player";
+ speechPlayerIndex=Math.min(Math.max(0,index),speechPlayerEntries.length-1);
+ speakQueue(speechItemsForEntry(speechPlayerEntries[speechPlayerIndex]),()=>{
+   if(speechPlayerIndex<speechPlayerEntries.length-1)playPlayerSpeechEntry(speechPlayerIndex+1);
+ });
 }
 function speakSelectedPlayerHistory(){
  const playerId=+($("speechPlayerSelect")?.value||0);
@@ -438,8 +454,11 @@ function speakSelectedPlayerHistory(){
  if(dayFilter)dayFilter.value="";
  selectedLogIndex=null;
  renderLog();
- prepareSpeechDay(0);
- speakQueue(speechItemsForPlayer(playerId));
+ speechPlaybackMode="player";
+ speechPlayerId=playerId;
+ speechPlayerEntries=speechEntriesForPlayer(playerId);
+ speechPlayerIndex=0;
+ playPlayerSpeechEntry(0);
 }
 function speakSelectedSpeech(){
  if(speechPaused){resumeSpeech();return;}
@@ -451,6 +470,7 @@ function selectSpeechDay(){
  const daySelect=$("speechDaySelect");
  const playerSelect=$("speechPlayerSelect");
  if(daySelect?.value&&playerSelect)playerSelect.value="";
+ if(daySelect?.value)speechPlaybackMode="day";
 }
 function selectSpeechPlayer(){
  const daySelect=$("speechDaySelect");
@@ -458,12 +478,27 @@ function selectSpeechPlayer(){
  if(playerSelect?.value&&daySelect)daySelect.value="";
 }
 function shiftSpeechLog(delta){
+ if(speechPlaybackMode==="player"){playPlayerSpeechEntry(speechPlayerIndex+delta);return;}
  const day=+($("speechDaySelect")?.value||speechPlaybackDay||dayNumber||0);
  if(day!==speechPlaybackDay)prepareSpeechDay(day);
  const nextIndex=speechPlaybackIndex+delta;
  playSpeechLog(nextIndex);
 }
 function shiftSpeechDay(delta){
+ if(speechPlaybackMode==="player"){
+   if(!speechPlayerEntries.length){playPlayerSpeechEntry(0);return;}
+   const current=speechPlayerEntries[speechPlayerIndex];
+   const currentDay=current?.day||0;
+   let target=-1;
+   speechPlayerEntries.forEach((entry,index)=>{
+     if(entry.type!=="day"||index===speechPlayerIndex)return;
+     if(delta>0&&entry.day>currentDay&&target<0)target=index;
+     if(delta<0&&entry.day<currentDay)target=index;
+   });
+   if(target>=0){playPlayerSpeechEntry(target);return;}
+   speakQueue([{text:delta>0?"Конец списка":"Начало списка",pause:0}]);
+   return;
+ }
  const select=$("speechDaySelect");
  const max=Math.max(0,dayNumber);
  const current=+(select?.value||dayNumber||0);
