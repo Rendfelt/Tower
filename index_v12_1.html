@@ -110,6 +110,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .role-choice-grid{display:grid;grid-template-columns:max-content max-content;gap:0 10px;padding:0 10px;align-items:start}
 .role-choice-grid .role-check{margin:3px 0;width:auto}
 .role-choice-grid button.role-check{min-width:0}
+.role-choice-grid button.role-check:disabled{opacity:.45;cursor:default;color:#b8a8c9}
 .role-check{display:flex!important;align-items:flex-start;gap:10px;min-height:44px;font-size:21px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
 .role-check input{flex:0 0 auto;width:24px;height:24px}
 .role-type-separator{grid-column:1/-1;height:1px;margin:9px 0;background:rgba(216,200,239,.32)}
@@ -585,7 +586,7 @@ function fitCardMenu(card,menu){
  });
 }
 function setConfirmedRole(person,roleId){
- people.forEach(p=>{p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>id!==roleId);});
+ if(roleConfirmedByOther(person,roleId))return;
  if(!person.roles.includes(roleId))person.roles.push(roleId);
  person.confirmedRoles=[roleId];
  save();
@@ -1000,9 +1001,12 @@ function openConfirmedRoleEditor(person,menu){
      return;
    }
    let b=document.createElement("button");
+   const takenByOther=roleConfirmedByOther(person,r.id);
    b.className="role-check";
-   b.textContent=(person.confirmedRoles||[]).includes(r.id)?`✓ ${r.name}`:r.name;
+   b.disabled=takenByOther;
+   b.textContent=(person.confirmedRoles||[]).includes(r.id)?`✓ ${r.name}`:takenByOther?`${r.name} — занята`:r.name;
    b.onclick=()=>{
+     if(takenByOther)return;
      setConfirmedRole(person,r.id);
      closeAllMenus();
    };
