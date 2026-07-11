@@ -63,6 +63,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .drop label{display:block}
 .card{position:absolute;min-width:148px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:20px 11px 10px;touch-action:none;user-select:none;font-family:"Alegreya SC",Georgia,serif;font-size:18px;box-shadow:0 5px 14px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.25);color:#1d1713}
 .card.color-blue{background:linear-gradient(180deg,#e2d4ff,#9b74c8);border-color:#6a3f96}
+.card.color-cyan{background:linear-gradient(180deg,#d8f5ff,#75bdd7);border-color:#3f8aa6}
 .card.color-red{background:linear-gradient(180deg,#f2c6d0,#bb596a);border-color:#873040}
 .card.color-green{background:linear-gradient(180deg,#d5eccb,#78a765);border-color:#4c743b}
 .card.color-yellow{background:linear-gradient(180deg,#fff3bc,#d9bc61);border-color:#9b7a2f}
@@ -168,20 +169,50 @@ const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;
 const ROLE_TYPES=["горожанин","изгой","приспешник","демон"];
 function normalizeRoles(){roles.forEach(r=>{r.type=ROLE_TYPES.includes(r.type)?r.type:"горожанин";});}
 function clonePeople(list=people){return JSON.parse(JSON.stringify(list));}
+function deathOnlyPersonFromMain(p){
+ return {id:p.id,name:p.name,roles:[],confirmedRoles:[],dead:!!p.dead,color:"blue",icons:[],x:p.x||0,y:p.y||0,deathReason:p.dead?p.deathReason||"":""};
+}
 function currentWorld(){return worlds.find(w=>w.id===currentWorldId)||worlds[0];}
 function isMainWorld(){return currentWorldId===1;}
+function isDeathOnlyWorld(){return currentWorld()?.kind==="death-only";}
 function effectiveFieldLocked(){return fieldLocked||!isMainWorld();}
 function normalizeWorlds(){
  worlds=Array.isArray(worlds)?worlds:[];
  if(!worlds.length)worlds=[{id:1,name:"Основной",people:clonePeople(people)}];
- worlds=worlds.map((w,i)=>({id:Number.isFinite(w.id)?w.id:i+1,name:w.name||`Мир ${i+1}`,people:Array.isArray(w.people)?w.people:clonePeople(people)}));
+ worlds=worlds.map((w,i)=>({id:Number.isFinite(w.id)?w.id:i+1,name:w.name||`Мир ${i+1}`,kind:w.kind||"",people:Array.isArray(w.people)?w.people:clonePeople(people)}));
+ let main=worlds.find(w=>w.id===1);
+ if(!main){
+   main={id:1,name:"Основной",kind:"",people:clonePeople(people)};
+   worlds.unshift(main);
+ }
+ main.name="Основной";
+ main.kind="";
+ const occupiedSecond=worlds.find(w=>w.id===2&&w.kind!=="death-only");
+ if(occupiedSecond)occupiedSecond.id=Math.max(2,...worlds.map(w=>w.id))+1;
+ let deathWorld=worlds.find(w=>w.kind==="death-only")||worlds.find(w=>w.id===2);
+ if(!deathWorld){
+   deathWorld={id:2,name:"Смерти",kind:"death-only",people:[]};
+   worlds.splice(1,0,deathWorld);
+ }
+ deathWorld.id=2;
+ deathWorld.name="Смерти";
+ deathWorld.kind="death-only";
+ syncDeathOnlyWorld();
+ worlds.sort((a,b)=>a.id===1?-1:b.id===1?1:a.id===2?-1:b.id===2?1:a.id-b.id);
  if(!worlds.some(w=>w.id===currentWorldId))currentWorldId=worlds[0].id;
 }
 function syncActiveWorld(){
  const world=currentWorld();
- if(world)world.people=clonePeople(people);
+ if(world&&!isDeathOnlyWorld())world.people=clonePeople(people);
+}
+function syncDeathOnlyWorld(){
+ const main=worlds.find(w=>w.id===1);
+ const deathWorld=worlds.find(w=>w.kind==="death-only");
+ if(!main||!deathWorld)return;
+ deathWorld.people=(main.people||[]).map(deathOnlyPersonFromMain);
 }
 function loadActiveWorld(){
+ syncDeathOnlyWorld();
  const world=currentWorld();
  people=world?clonePeople(world.people):[];
  normalizePeople();
@@ -195,6 +226,7 @@ function syncDeathToOtherWorlds(sourcePerson){
    target.dead=!!sourcePerson.dead;
    target.deathReason=sourcePerson.deathReason||"";
  });
+ syncDeathOnlyWorld();
 }
 function forEachRoleByType(callback){
  let hasPreviousType=false;
@@ -206,7 +238,7 @@ function forEachRoleByType(callback){
    hasPreviousType=true;
  });
 }
-function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.icons=Array.isArray(p.icons)?p.icons:(p.icon?[p.icon]:[]);p.icons=p.icons.filter(icon=>["heart","eye","cross","smile"].includes(icon));delete p.icon;p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id)).slice(0,1);});}
+function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","cyan","red","green","yellow"].includes(p.color)?p.color:"blue";p.icons=Array.isArray(p.icons)?p.icons:(p.icon?[p.icon]:[]);p.icons=p.icons.filter(icon=>["heart","eye","cross","smile"].includes(icon));delete p.icon;p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id)).slice(0,1);});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
 function roleIsCrossed(person,id){
@@ -257,7 +289,7 @@ function refreshRoleViews(){
  });
  renderLog();
 }
-function save(){syncActiveWorld();localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked}));}
+function save(){syncActiveWorld();syncDeathOnlyWorld();localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
  if(!isMainWorld())return;
@@ -523,6 +555,7 @@ function addCustomLogEvent(){
 (function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked}catch{}}normalizeRoles();normalizeWorlds();loadActiveWorld();})();
 async function exportJson(){
  syncActiveWorld();
+ syncDeathOnlyWorld();
  const data=JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked},null,2);
  const blob=new Blob([data],{type:"application/json"});
  if(window.showSaveFilePicker){
@@ -547,7 +580,7 @@ async function exportJson(){
 }
 function openImport(){imp.value="";imp.click();}
 imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();loadActiveWorld();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]},{id:2,name:"Смерти",kind:"death-only",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -605,6 +638,7 @@ function anyCardMenuOpen(){
  return [...document.querySelectorAll(".menu")].some(m=>m.style.display==="block");
 }
 function openCardMenu(card,menu){
+ if(isDeathOnlyWorld())return;
  closeAllMenus(menu);
  menu._card=card;
  const person=people.find(p=>p.id===+card.dataset.id);
@@ -818,7 +852,8 @@ function selectWorld(id){
 function addWorld(){
  syncActiveWorld();
  const nextId=Math.max(0,...worlds.map(w=>w.id))+1;
- worlds.push({id:nextId,name:`Мир ${worlds.length+1}`,people:clonePeople(people)});
+ const sourcePeople=isDeathOnlyWorld()?clonePeople(worlds.find(w=>w.id===1)?.people||[]):clonePeople(people);
+ worlds.push({id:nextId,name:`Мир ${worlds.filter(w=>w.id>2).length+1}`,kind:"",people:sourcePeople});
  currentWorldId=nextId;
  loadActiveWorld();
  save();
@@ -952,6 +987,7 @@ function renderWorldTabs(){
 function fillCardMenu(person,menu){
  menu.innerHTML="";
  menu.classList.remove("role-choice-menu");
+ if(isDeathOnlyWorld())return;
  let colorBtn=document.createElement("button");
  colorBtn.textContent="Цвет плашки";
  colorBtn.onclick=()=>openColorEditor(person,menu);
@@ -1024,7 +1060,7 @@ function openDeathAbilityEditor(person,menu){
 
 function openColorEditor(person,menu){
  menu.innerHTML="";
- [["blue","Базовый"],["red","Красный"],["green","Зеленый"],["yellow","Желтый"]].forEach(([color,title])=>{
+ [["blue","Базовый"],["cyan","Синий"],["red","Красный"],["green","Зеленый"],["yellow","Желтый"]].forEach(([color,title])=>{
    let b=document.createElement("button");
    b.textContent=(person.color===color?"✓ ":"")+title;
    b.onclick=()=>setPlayerColor(person,color);
