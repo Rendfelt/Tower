@@ -40,7 +40,7 @@ body.stat-world .field-wrap{width:1200px}
 .logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 10px 0}
 .logcomposer input,.logcomposer select,.logcomposer button{font-size:20px;padding:9px 10px}
 .logfilters{display:flex;gap:8px;margin:0 0 10px 0}
-.logfilters select{font-size:20px;padding:9px 10px;min-width:180px}
+.logfilters select,.logfilters button{font-size:20px;padding:9px 10px;min-width:180px}
 .fixed-events{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px 0}
 .fixed-events button{font-size:19px;padding:8px 10px}
 .logbox{height:270px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(38,17,62,.98),rgba(15,8,28,.98));color:var(--ink);padding:10px 12px;font-size:20px;box-shadow:inset 0 0 24px rgba(0,0,0,.35)}
@@ -163,7 +163,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
-<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
@@ -566,6 +566,16 @@ function renderLogFilters(){
  playerFilter.value=people.some(p=>String(p.id)===playerValue)?playerValue:"";
  roleFilter.value=roles.some(r=>String(r.id)===roleValue)?roleValue:"";
  dayFilter.value=+dayValue>0&&+dayValue<=dayNumber?dayValue:"";
+}
+function resetLogFilters(){
+ const playerFilter=$("logPlayerFilter");
+ const roleFilter=$("logRoleFilter");
+ const dayFilter=$("logDayFilter");
+ if(playerFilter)playerFilter.value="";
+ if(roleFilter)roleFilter.value="";
+ if(dayFilter)dayFilter.value="";
+ selectedLogIndex=null;
+ renderLog();
 }
 function highlightLogText(text){
  let html=esc(text);
