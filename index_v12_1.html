@@ -430,6 +430,14 @@ function speechItemsForPlayer(playerId){
 function speakSelectedPlayerHistory(){
  const playerId=+($("speechPlayerSelect")?.value||0);
  if(!playerId)return;
+ const playerFilter=$("logPlayerFilter");
+ const roleFilter=$("logRoleFilter");
+ const dayFilter=$("logDayFilter");
+ if(playerFilter)playerFilter.value=String(playerId);
+ if(roleFilter)roleFilter.value="";
+ if(dayFilter)dayFilter.value="";
+ selectedLogIndex=null;
+ renderLog();
  prepareSpeechDay(0);
  speakQueue(speechItemsForPlayer(playerId));
 }
