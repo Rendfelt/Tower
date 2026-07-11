@@ -74,6 +74,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
+.field-nominate-btn{position:absolute;left:12px;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
 .card-icons{position:absolute;right:6px;top:4px;display:flex;flex-direction:row-reverse;align-items:center;gap:5px;line-height:1;pointer-events:none}
 .card-icon{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;font-size:24px;text-shadow:0 1px 2px rgba(255,255,255,.45),0 2px 5px rgba(0,0,0,.35)}
@@ -125,7 +126,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,nominationPickSource=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -450,8 +451,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;nominationPickSource=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationPickSource=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -588,12 +589,18 @@ function updateEventHint(){
    eventHint.innerHTML=`Голосование за ${esc(playerName(votingTargetId))}: нажмите на карточку голосующего <button onclick="cancelVoting()">Завершить</button>`;
    return;
  }
+ if(nominationPickSource){
+   eventHint.style.display="block";
+   eventHint.innerHTML=`Номинация: нажмите на карточку игрока, который номинирует <button onclick="cancelNomination()">Отмена</button>`;
+   return;
+ }
  if(!nominationSourceId){eventHint.style.display="none";eventHint.innerHTML="";return;}
  eventHint.style.display="block";
  eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует: нажмите на карточку цели на поле <button onclick="cancelNomination()">Отмена</button>`;
 }
-function startNomination(person){
- nominationSourceId=person.id;
+function startNominationFromField(){
+ nominationPickSource=true;
+ nominationSourceId=null;
  votingTargetId=null;
  votingLogId=null;
  conversationSourceId=null;
@@ -601,7 +608,13 @@ function startNomination(person){
  closeAllMenus();
  render();
 }
+function chooseNominationSource(person){
+ nominationPickSource=false;
+ nominationSourceId=person.id;
+ render();
+}
 function cancelNomination(){
+ nominationPickSource=false;
  nominationSourceId=null;
  render();
 }
@@ -610,6 +623,7 @@ function finishNomination(target){
  const log=addNominationLog(nominationSourceId,target.id);
  votingTargetId=target.id;
  votingLogId=log.id;
+ nominationPickSource=false;
  nominationSourceId=null;
  render();
 }
@@ -634,6 +648,7 @@ function voteForNominee(voter){
 }
 
 function startConversation(person){
+ nominationPickSource=false;
  conversationSourceId=person.id;
  conversationTargetIds=[];
  nominationSourceId=null;
@@ -665,6 +680,11 @@ function render(){
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
+let nominateFieldBtn=document.createElement("button");
+nominateFieldBtn.className="field-nominate-btn";
+nominateFieldBtn.textContent="Номинировать";
+nominateFieldBtn.onclick=e=>{e.stopPropagation();startNominationFromField();};
+field.append(nominateFieldBtn);
 let dayBadge=document.createElement("div");
 dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
@@ -712,6 +732,7 @@ people.forEach(p=>{
  if(conversationTargetIds.includes(p.id))card.classList.add("conversation-selected");
  if(p.id===nominationSourceId)card.classList.add("nomination-source");
  else if(nominationSourceId)card.classList.add("nomination-target");
+ if(nominationPickSource)card.classList.add("nomination-target");
  if(p.id===votingTargetId)card.classList.add("vote-target");
  else if(votingTargetId)card.classList.add("vote-voter");
  if(votes.includes(p.id))card.classList.add("vote-done");
@@ -743,9 +764,6 @@ function fillCardMenu(person,menu){
  let filterBtn=document.createElement("button");
  filterBtn.textContent="Фильтровать";
  filterBtn.onclick=()=>filterLogByPlayer(person);
- let nominateBtn=document.createElement("button");
- nominateBtn.textContent="Номинировать";
- nominateBtn.onclick=()=>startNomination(person);
  let conversationBtn=document.createElement("button");
  conversationBtn.textContent="Общение";
  conversationBtn.onclick=()=>startConversation(person);
@@ -770,7 +788,7 @@ function fillCardMenu(person,menu){
  let deleteBtn=document.createElement("button");
  deleteBtn.textContent="Удалить игрока";
  deleteBtn.onclick=()=>deletePerson(person);
- menu.append(roleBtn,nominateBtn,conversationBtn,statsBtn,confirmBtn,deadBtn,colorBtn,iconBtn,filterBtn,unconfirmBtn,deleteBtn);
+ menu.append(roleBtn,conversationBtn,statsBtn,confirmBtn,deadBtn,colorBtn,iconBtn,filterBtn,unconfirmBtn,deleteBtn);
 }
 
 function setPlayerColor(person,color){
@@ -926,6 +944,11 @@ function setupCardInteractions(card,menu,p){
      toggleConversationTarget(p);
      return;
    }
+   if(nominationPickSource){
+     e.preventDefault();
+     chooseNominationSource(p);
+     return;
+   }
    if(nominationSourceId){
      e.preventDefault();
      finishNomination(p);
@@ -987,3 +1010,4 @@ document.addEventListener("pointerdown",e=>{
 });
 render();
 </script></body></html>
+
