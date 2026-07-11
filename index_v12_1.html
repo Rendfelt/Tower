@@ -25,11 +25,12 @@
 html,body{overflow-x:auto}
 body{font-family:"Alegreya SC",Georgia,serif;font-size:22px;margin:0;line-height:1.35;min-width:1040px;background:var(--night);color:var(--ink);padding:18px 20px 28px;background-image:radial-gradient(ellipse at 50% 100%,rgba(129,52,174,.5) 0%,rgba(56,22,92,.36) 28%,transparent 58%),radial-gradient(circle at 72% 8%,rgba(157,77,204,.32),transparent 26%),radial-gradient(circle at 12% 18%,rgba(216,177,92,.16),transparent 22%),repeating-linear-gradient(112deg,rgba(255,255,255,.045) 0 1px,transparent 1px 42px),repeating-linear-gradient(68deg,rgba(0,0,0,.2) 0 2px,transparent 2px 58px),linear-gradient(180deg,#05030b 0%,#1b0d2d 46%,#0b0612 100%);background-attachment:fixed;background-size:auto,auto,auto,180px 180px,220px 220px,auto}
 .top-area{width:1040px;position:relative}
-.corner-logo{position:absolute;right:10px;top:8px;width:54px;height:54px;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.65));pointer-events:none}
+.system-header{width:1000px;margin:0 20px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.corner-logo{width:180px;height:auto;filter:drop-shadow(0 8px 16px rgba(0,0,0,.65));pointer-events:none}
 p{margin:0 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .wrap{display:flex;gap:20px;align-items:flex-start;margin:14px 0 8px;width:1040px;position:relative;min-height:0}
 details.panel{width:300px;margin-bottom:12px;background:linear-gradient(180deg,rgba(72,29,109,.95),rgba(22,10,37,.98));border:1px solid var(--line);border-radius:8px;padding:8px 10px;box-shadow:0 8px 22px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.12)}
-details.system-panel{width:max-content;min-width:220px;min-height:72px;margin:0 20px 12px;position:relative;padding-right:76px}
+details.system-panel{width:max-content;min-width:220px;margin:0;position:relative}
 details.system-panel .top-area{width:auto}
 details.system-panel .wrap{width:auto;margin:14px 0 0}
 details.log-panel{width:1000px;margin:14px 20px 0}
@@ -131,7 +132,7 @@ input,textarea,[contenteditable="true"]{user-select:text;-webkit-user-select:tex
 input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 </style><body>
 
-<details class="panel system-panel"><summary>Система</summary><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""><div class=top-area>
+<div class=system-header><details class="panel system-panel"><summary>Система</summary><div class=top-area>
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
 <p><input id=rname placeholder="Роль"><button onclick="addRole()">Добавить роль</button><select id=rtype><option value="горожанин">горожанин</option><option value="изгой">изгой</option><option value="приспешник">приспешник</option><option value="демон">демон</option></select></p>
 <div class=lock-toggle-row><label class=switch><input id=fieldLockToggle type=checkbox onchange="setFieldLocked(this.checked)"><span class=switch-track></span><span class=switch-label>Зафиксировать поле</span></label></div>
@@ -140,7 +141,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <button onclick="resetState()">Сброс</button>
 <input id="imp" type=file accept=".json" hidden></p></div>
 
-<div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details>
+<div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
 <div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
