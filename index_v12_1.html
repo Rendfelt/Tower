@@ -659,7 +659,12 @@ function updateEventHint(){
 }
 function chooseNominationSource(person){
  nominationPickSource=false;
+ filterPickPlayer=false;
  nominationSourceId=person.id;
+ votingTargetId=null;
+ votingLogId=null;
+ conversationSourceId=null;
+ conversationTargetIds=[];
  render();
 }
 function cancelNomination(){
@@ -1037,12 +1042,6 @@ function setupCardInteractions(card,menu,p){
      render();
      return;
    }
-   if(conversationSourceId){
-     e.preventDefault();
-     e.stopPropagation();
-     toggleConversationTarget(p);
-     return;
-   }
    if(nominationPickSource){
      e.preventDefault();
      chooseNominationSource(p);
@@ -1061,6 +1060,12 @@ function setupCardInteractions(card,menu,p){
    if(votingTargetId){
      e.preventDefault();
      voteForNominee(p);
+     return;
+   }
+   if(conversationSourceId){
+     e.preventDefault();
+     e.stopPropagation();
+     toggleConversationTarget(p);
      return;
    }
    if(fieldLocked){
@@ -1103,7 +1108,9 @@ function setupCardInteractions(card,menu,p){
  });
 
  const finish=e=>{
-   if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
+   const hadCapture=card.hasPointerCapture(e.pointerId);
+   if(!hadCapture)return;
+   card.releasePointerCapture(e.pointerId);
    if(fieldLocked){
      const dx=e.clientX-startX;
      const dy=e.clientY-startY;
