@@ -98,7 +98,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .panel .role-confirmed,.menu .role-confirmed{color:#78d084}
 .panel .role-crossed,.menu .role-crossed{color:#8e8068}
 .role-owners{font-size:18px;color:var(--muted);margin:2px 0 8px 16px}
-.menu{display:none;position:absolute;background:linear-gradient(180deg,#2c1645,#13091f);border:1px solid rgba(216,200,239,.55);border-radius:8px;padding:7px;z-index:1000;box-shadow:0 12px 30px rgba(0,0,0,.55);width:420px;max-width:calc(1000px - 8px);overflow-x:hidden;color:var(--ink)}
+.menu{display:none;position:fixed;background:linear-gradient(180deg,#2c1645,#13091f);border:1px solid rgba(216,200,239,.55);border-radius:8px;padding:7px;z-index:1000;box-shadow:0 12px 30px rgba(0,0,0,.55);width:420px;max-width:calc(1000px - 8px);overflow-x:hidden;color:var(--ink)}
 .menu button{display:block;width:100%;min-height:46px;margin:3px 0;font-family:"Alegreya SC",Georgia,serif;font-size:21px;font-weight:normal;text-transform:none;text-shadow:none;padding:10px 12px;text-align:left;background:transparent;border-color:transparent;color:#fff8ee}
 .menu button:active{background:rgba(255,255,255,.08)}
 .menu label{display:block;margin:8px 0;}
@@ -560,13 +560,15 @@ function fitCardMenu(card,menu){
  menu.style.overflowX="auto";
  menu.style.overflowY="auto";
  requestAnimationFrame(()=>{
-   const cardBox=card.getBoundingClientRect();
+   const viewport=window.visualViewport;
    const menuWidth=menu.offsetWidth;
    const menuHeight=menu.offsetHeight;
-   const centerLeft=(window.innerWidth-menuWidth)/2;
-   const centerTop=(window.innerHeight-menuHeight)/2;
-   let left=Math.max(8,centerLeft)-cardBox.left;
-   let top=Math.max(8,centerTop)-cardBox.top;
+   const viewLeft=viewport?viewport.offsetLeft:0;
+   const viewTop=viewport?viewport.offsetTop:0;
+   const viewWidth=viewport?viewport.width:window.innerWidth;
+   const viewHeight=viewport?viewport.height:window.innerHeight;
+   let left=viewLeft+Math.max(8,(viewWidth-menuWidth)/2);
+   let top=viewTop+Math.max(8,(viewHeight-menuHeight)/2);
    menu.style.left=left+"px";
    menu.style.top=top+"px";
  });
