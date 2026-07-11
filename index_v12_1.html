@@ -75,9 +75,10 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
-.field-nominate-btn,.field-filter-btn{position:absolute;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
+.field-nominate-btn,.field-filter-btn,.field-lock-btn{position:absolute;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
 .field-nominate-btn{left:12px}
 .field-filter-btn{left:190px}
+.field-lock-btn{left:290px}
 .stats-panel{display:none;width:1000px;box-sizing:border-box;margin:14px 20px 0;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .stats-panel b{font-family:"Gabriela",Georgia,serif;color:#1c0f05}
 .stats-panel button{margin-left:10px;min-height:36px;padding:6px 10px;font-size:18px}
@@ -132,7 +133,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -188,7 +189,7 @@ function refreshRoleViews(){
  });
  renderLog();
 }
-function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,pid,rid,dayNumber}));}
+function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,pid,rid,dayNumber,fieldLocked}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
  logs.push({time:logTime(),text});
@@ -441,9 +442,9 @@ function addCustomLogEvent(){
  input.value="";
  input._meta={playerIds:[],roleIds:[]};
 }
-(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length}catch{}}normalizePeople();})();
+(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;fieldLocked=!!d.fieldLocked}catch{}}normalizePeople();})();
 async function exportJson(){
- const data=JSON.stringify({people,roles,logs,pid,rid,dayNumber},null,2);
+ const data=JSON.stringify({people,roles,logs,pid,rid,dayNumber,fieldLocked},null,2);
  const blob=new Blob([data],{type:"application/json"});
  if(window.showSaveFilePicker){
    try{
@@ -466,8 +467,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -711,6 +712,12 @@ function cancelConversation(){
  conversationTargetIds=[];
  render();
 }
+function toggleFieldLocked(){
+ fieldLocked=!fieldLocked;
+ closeAllMenus();
+ save();
+ render();
+}
 
 function render(){
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
@@ -726,6 +733,11 @@ filterFieldBtn.className="field-filter-btn";
 filterFieldBtn.textContent="Фильтр";
 filterFieldBtn.onclick=e=>{e.stopPropagation();startPlayerFilterFromField();};
 field.append(filterFieldBtn);
+let lockFieldBtn=document.createElement("button");
+lockFieldBtn.className="field-lock-btn";
+lockFieldBtn.textContent=fieldLocked?"Поле зафиксировано":"Зафиксировать поле";
+lockFieldBtn.onclick=e=>{e.stopPropagation();toggleFieldLocked();};
+field.append(lockFieldBtn);
 let dayBadge=document.createElement("div");
 dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
@@ -968,10 +980,7 @@ function openConfirmedRoleEditor(person,menu){
 }
 function setupCardInteractions(card,menu,p){
  const MOVE_LIMIT=8;
- const LONG_PRESS_MS=500;
- let timer=null,dragging=false,moved=false,startX=0,startY=0,ox=0,oy=0;
-
- const stopTimer=()=>{if(timer){clearTimeout(timer);timer=null;}};
+ let dragging=false,moved=false,startX=0,startY=0,ox=0,oy=0;
  const setPosition=(x,y)=>{
    const maxX=Math.max(0,field.clientWidth-card.offsetWidth);
    const maxY=Math.max(0,field.clientHeight-card.offsetHeight);
@@ -983,6 +992,7 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("contextmenu",e=>{
    e.preventDefault();
+   if(!fieldLocked)return;
    openCardMenu(card,menu);
  });
 
@@ -1020,6 +1030,12 @@ function setupCardInteractions(card,menu,p){
      voteForNominee(p);
      return;
    }
+   if(fieldLocked){
+     e.preventDefault();
+     closeAllMenus();
+     openCardMenu(card,menu);
+     return;
+   }
    e.preventDefault();
    closeAllMenus();
    startX=e.clientX;
@@ -1029,15 +1045,6 @@ function setupCardInteractions(card,menu,p){
    dragging=false;
    moved=false;
    card.setPointerCapture(e.pointerId);
-
-   timer=setTimeout(()=>{
-     if(!moved){
-       openCardMenu(card,menu);
-       dragging=false;
-       moved=true;
-       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
-     }
-   },LONG_PRESS_MS);
  });
 
  card.addEventListener("pointermove",e=>{
@@ -1049,7 +1056,6 @@ function setupCardInteractions(card,menu,p){
    if(!dragging && dist>MOVE_LIMIT){
      dragging=true;
      moved=true;
-     stopTimer();
      menu.style.display="none";
    }
    if(dragging)setPosition(ox+dx,oy+dy);
@@ -1057,7 +1063,6 @@ function setupCardInteractions(card,menu,p){
 
  const finish=e=>{
    if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
-   stopTimer();
    if(dragging)save();
    dragging=false;
  };
