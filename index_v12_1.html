@@ -105,9 +105,12 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .menu button{display:block;width:100%;min-height:46px;margin:3px 0;font-family:"Alegreya SC",Georgia,serif;font-size:21px;font-weight:normal;text-transform:none;text-shadow:none;padding:10px 12px;text-align:left;background:transparent;border-color:transparent;color:#fff8ee}
 .menu button:active{background:rgba(255,255,255,.08)}
 .menu label{display:block;margin:8px 0;}
+.role-choice-grid{display:grid;grid-template-columns:max-content max-content;gap:0 10px;padding:0 10px;align-items:start}
+.role-choice-grid .role-check{margin:3px 0;width:auto}
+.role-choice-grid button.role-check{min-width:0}
 .role-check{display:flex!important;align-items:flex-start;gap:10px;min-height:44px;font-size:21px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
 .role-check input{flex:0 0 auto;width:24px;height:24px}
-.role-type-separator{height:1px;margin:9px 4px;background:rgba(216,200,239,.32)}
+.role-type-separator{grid-column:1/-1;height:1px;margin:9px 0;background:rgba(216,200,239,.32)}
 .icon-check{display:flex!important;align-items:center;gap:10px;min-height:44px;font-size:21px}
 .icon-check input{flex:0 0 auto;width:24px;height:24px}
 .role-row,.person-row{display:flex;align-items:flex-start;gap:8px;margin:6px 0;position:relative}
@@ -552,8 +555,9 @@ function openCardMenu(card,menu){
 function fitCardMenu(card,menu){
  if(!card||!menu||menu.style.display==="none")return;
  menu.style.maxHeight=Math.max(120,field.clientHeight-8)+"px";
- menu.style.width=Math.min(420,field.clientWidth-8)+"px";
+ menu.style.width=menu.classList.contains("role-choice-menu")?"max-content":Math.min(420,field.clientWidth-8)+"px";
  menu.style.maxWidth=(field.clientWidth-8)+"px";
+ menu.style.overflowX=menu.classList.contains("role-choice-menu")?"auto":"hidden";
  menu.style.overflowY="auto";
  requestAnimationFrame(()=>{
    const fieldBox=field.getBoundingClientRect();
@@ -851,6 +855,7 @@ people.forEach(p=>{
 
 function fillCardMenu(person,menu){
  menu.innerHTML="";
+ menu.classList.remove("role-choice-menu");
  let roleBtn=document.createElement("button");
  roleBtn.textContent="Назначить роли";
  roleBtn.onclick=()=>openRoleEditor(person,menu);
@@ -959,11 +964,15 @@ function openIconEditor(person,menu){
 
 function openRoleEditor(person,menu){
  menu.innerHTML="";
+ menu.classList.add("role-choice-menu");
+ let grid=document.createElement("div");
+ grid.className="role-choice-grid";
+ menu.append(grid);
  forEachRoleByType((r)=>{
    if(!r){
      let sep=document.createElement("div");
      sep.className="role-type-separator";
-     menu.append(sep);
+     grid.append(sep);
      return;
    }
    let l=document.createElement("label");
@@ -979,7 +988,7 @@ function openRoleEditor(person,menu){
      refreshRoleViews();
    };
    l.append(c," ",r.name);
-   menu.append(l);
+   grid.append(l);
  });
  fitCardMenu(menu._card,menu);
 }
@@ -987,16 +996,20 @@ function openRoleEditor(person,menu){
 
 function openConfirmedRoleEditor(person,menu){
  menu.innerHTML="";
+ menu.classList.add("role-choice-menu");
  if(!roles.length){
    let empty=document.createElement("div");
    empty.textContent="Нет ролей";
    menu.append(empty);
  }
+ let grid=document.createElement("div");
+ grid.className="role-choice-grid";
+ menu.append(grid);
  forEachRoleByType((r)=>{
    if(!r){
      let sep=document.createElement("div");
      sep.className="role-type-separator";
-     menu.append(sep);
+     grid.append(sep);
      return;
    }
    let b=document.createElement("button");
@@ -1006,7 +1019,7 @@ function openConfirmedRoleEditor(person,menu){
      setConfirmedRole(person,r.id);
      closeAllMenus();
    };
-   menu.append(b);
+   grid.append(b);
  });
  fitCardMenu(menu._card,menu);
 }
