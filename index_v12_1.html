@@ -614,8 +614,7 @@ function updateEventHint(){
  if(!window.eventHint)return;
  if(conversationSourceId){
    eventHint.style.display="block";
-   const targets=conversationTargetIds.map(playerName).join(", ")||"никого";
-   eventHint.innerHTML=`${esc(playerName(conversationSourceId))} общается: выбрано ${esc(targets)} <button onclick="finishConversation()">Завершить</button> <button onclick="cancelConversation()">Отмена</button>`;
+   eventHint.innerHTML=`${esc(playerName(conversationSourceId))} общается: нажмите на одну карточку собеседника <button onclick="cancelConversation()">Отмена</button>`;
    return;
  }
  if(votingTargetId){
@@ -704,9 +703,9 @@ function startConversation(person){
 }
 function toggleConversationTarget(person){
  if(!conversationSourceId || person.id===conversationSourceId)return;
- conversationTargetIds=conversationTargetIds.includes(person.id)
-   ?conversationTargetIds.filter(id=>id!==person.id)
-   :[...conversationTargetIds,person.id];
+ addConversationLog(conversationSourceId,[person.id]);
+ conversationSourceId=null;
+ conversationTargetIds=[];
  render();
 }
 function finishConversation(){
@@ -1014,6 +1013,7 @@ function setupCardInteractions(card,menu,p){
    }
    if(conversationSourceId){
      e.preventDefault();
+     e.stopPropagation();
      toggleConversationTarget(p);
      return;
    }
