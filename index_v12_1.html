@@ -110,7 +110,6 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .role-choice-grid{display:grid;grid-template-columns:max-content max-content;gap:0 10px;padding:0 10px;align-items:start}
 .role-choice-grid .role-check{margin:3px 0;width:auto}
 .role-choice-grid button.role-check{min-width:0}
-.role-choice-grid button.selected-confirmed-role{background:rgba(120,208,132,.18);box-shadow:inset 0 0 0 1px rgba(120,208,132,.75);color:#8cff9d}
 .role-choice-grid button.role-check:disabled{opacity:.45;cursor:default;color:#b8a8c9}
 .role-check{display:flex!important;align-items:flex-start;gap:10px;min-height:44px;font-size:21px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
 .role-check input{flex:0 0 auto;width:24px;height:24px}
@@ -1004,10 +1003,10 @@ function openConfirmedRoleEditor(person,menu){
    let b=document.createElement("button");
    const takenByOther=roleConfirmedByOther(person,r.id);
    const selectedByPerson=(person.confirmedRoles||[]).includes(r.id);
+   const unconfirmedAssigned=person.roles.includes(r.id)&&!selectedByPerson;
    b.className="role-check";
-   if(selectedByPerson)b.classList.add("selected-confirmed-role");
    b.disabled=takenByOther;
-   b.textContent=selectedByPerson?`✓ ${r.name}`:takenByOther?`${r.name} — занята`:r.name;
+   b.textContent=unconfirmedAssigned?`✓ ${r.name}`:takenByOther?`${r.name} — занята`:r.name;
    b.onclick=()=>{
      if(takenByOther)return;
      setConfirmedRole(person,r.id);
