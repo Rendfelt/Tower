@@ -311,9 +311,8 @@ function cardHtml(person,votes){
 }
 function separateStatCards(){
  if(!isDeathOnlyWorld())return;
- const gap=2;
+ const gap=20;
  const wallGap=10;
- const placed=[];
  const cards=[...field.querySelectorAll(".card")].map(card=>{
    const person=people.find(p=>p.id===+card.dataset.id);
    if(!person)return null;
@@ -326,36 +325,22 @@ function separateStatCards(){
    ];
    item.wall=distances.sort((a,b)=>a.value-b.value)[0].wall;
    item.axis=(item.wall==="left"||item.wall==="right")?"y":"x";
-   if(item.wall==="left")item.x=wallGap;
-   if(item.wall==="right")item.x=Math.max(0,field.clientWidth-item.w-wallGap);
-   if(item.wall==="top")item.y=wallGap;
-   if(item.wall==="bottom")item.y=Math.max(0,field.clientHeight-item.h-wallGap);
    return item;
- }).filter(Boolean).sort((a,b)=>a.y-b.y||a.x-b.x);
- const overlaps=(candidate)=>placed.some(item=>candidate.x<item.x+item.w+gap&&candidate.x+candidate.w+gap>item.x&&candidate.y<item.y+item.h+gap&&candidate.y+candidate.h+gap>item.y);
- const clampCandidate=(item,x,y)=>({
-   x:Math.min(Math.max(0,x),Math.max(0,field.clientWidth-item.w)),
-   y:Math.min(Math.max(0,y),Math.max(0,field.clientHeight-item.h)),
-   w:item.w,
-   h:item.h
- });
- cards.forEach(item=>{
-   let best=clampCandidate(item,item.x,item.y);
-   let bestScore=overlaps(best)?Infinity:0;
-   const maxOffset=item.axis==="y"?field.clientHeight:field.clientWidth;
-   for(let offset=8;bestScore===Infinity&&offset<=maxOffset;offset+=8){
-     const candidates=item.axis==="y"
-       ?[clampCandidate(item,item.x,item.y-offset),clampCandidate(item,item.x,item.y+offset)]
-       :[clampCandidate(item,item.x-offset,item.y),clampCandidate(item,item.x+offset,item.y)];
-     candidates.forEach(candidate=>{
-       if(overlaps(candidate))return;
-       const score=(candidate.x-item.x)**2+(candidate.y-item.y)**2;
-       if(score<bestScore){best=candidate;bestScore=score;}
-     });
-   }
-   item.card.style.left=best.x+"px";
-   item.card.style.top=best.y+"px";
-   placed.push(best);
+ }).filter(Boolean);
+ ["left","right","top","bottom"].forEach(wall=>{
+   const group=cards.filter(item=>item.wall===wall).sort((a,b)=>wall==="left"||wall==="right"?a.y-b.y:a.x-b.x);
+   if(!group.length)return;
+   const vertical=wall==="left"||wall==="right";
+   const total=group.reduce((sum,item)=>sum+(vertical?item.h:item.w),0)+gap*(group.length-1);
+   const limit=vertical?field.clientHeight:field.clientWidth;
+   let pos=Math.max(wallGap,(limit-total)/2);
+   group.forEach(item=>{
+     const x=wall==="left"?wallGap:wall==="right"?Math.max(0,field.clientWidth-item.w-wallGap):pos;
+     const y=wall==="top"?wallGap:wall==="bottom"?Math.max(0,field.clientHeight-item.h-wallGap):pos;
+     item.card.style.left=Math.min(Math.max(0,x),Math.max(0,field.clientWidth-item.w))+"px";
+     item.card.style.top=Math.min(Math.max(0,y),Math.max(0,field.clientHeight-item.h))+"px";
+     pos+=(vertical?item.h:item.w)+gap;
+   });
  });
 }
 function refreshRoleViews(){
