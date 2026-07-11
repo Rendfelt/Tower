@@ -34,7 +34,7 @@ details.system-panel{width:max-content;min-width:220px;margin:0;position:relativ
 details.system-panel .top-area{width:auto}
 details.system-panel .wrap{width:auto;margin:14px 0 0}
 details.log-panel{width:1000px;margin:14px 20px 0}
-body.stat-world .system-header,body.stat-world details.log-panel,body.stat-world .world-tabs,body.stat-world .stats-panel{width:1200px}
+body.stat-world .system-header,body.stat-world details.log-panel,body.stat-world .world-tabs,body.stat-world .stats-panel,body.stat-world .stat-world-controls{width:1200px}
 body.stat-world #field{width:1200px;height:1200px}
 body.stat-world .field-wrap{width:1200px}
 .logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 10px 0}
@@ -102,6 +102,12 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .stats-panel{display:none;width:1000px;box-sizing:border-box;margin:14px 20px 0;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .stats-panel b{font-family:"Gabriela",Georgia,serif;color:#1c0f05}
 .stats-panel button{margin-left:10px;min-height:36px;padding:6px 10px;font-size:18px}
+.stat-world-controls{display:none;width:1000px;box-sizing:border-box;margin:10px 20px 0;gap:8px}
+body.stat-world .stat-world-controls{display:flex}
+.stat-world-controls select{font-size:20px;padding:8px 10px}
+.card.stat-event-highlight{box-shadow:0 0 0 4px rgba(244,211,111,.95),0 0 24px rgba(244,211,111,.55),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
+.stat-link-layer{position:absolute;inset:0;pointer-events:none;z-index:3}
+.stat-link-layer line{stroke:#75d7ff;stroke-width:8;stroke-linecap:round;opacity:.78;filter:drop-shadow(0 0 5px rgba(117,215,255,.65))}
 .stat-line{display:block;border-radius:5px;padding:2px 5px;margin:2px 0}
 .stat-line.alert{background:rgba(181,22,36,.22);box-shadow:inset 0 0 0 2px rgba(181,22,36,.82),0 1px 4px rgba(80,0,8,.22)}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
@@ -157,11 +163,11 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
-<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect onchange="setStatEventFilter()"></select><select id=statEventSelect onchange="setStatEventFilter()"><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="";
 const activeTouchPointers=new Set();
 function cancelAllCardGestures(){
  document.querySelectorAll(".card").forEach(card=>{
@@ -310,6 +316,86 @@ function cardHtml(person,votes){
  return cardIconHtml(person)+"<b>"+playerTitle(person)+(votes.includes(person.id)?" ✋":"")+"</b>"
    +(person.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"")
    +cardDetailsHtml(person);
+}
+function logsForDay(day){
+ let current=0;
+ return logs.filter(log=>{
+   if(log.type==="day"){
+     current=Number.isFinite(log.day)?log.day:current+1;
+     return false;
+   }
+   return current===day;
+ });
+}
+function renderStatControls(){
+ const box=$("statWorldControls");
+ const daySelect=$("statDaySelect");
+ const eventSelect=$("statEventSelect");
+ if(!box||!daySelect||!eventSelect)return;
+ if(!isDeathOnlyWorld())return;
+ const maxDay=Math.max(0,dayNumber);
+ if(statDayFilter&&+statDayFilter>maxDay)statDayFilter="";
+ daySelect.innerHTML=`<option value="">День</option>`+Array.from({length:maxDay},(_,i)=>`<option value="${i+1}">День ${i+1}</option>`).join("");
+ if(!statDayFilter&&maxDay)statDayFilter=String(maxDay);
+ daySelect.value=statDayFilter;
+ eventSelect.value=statEventFilter;
+}
+function setStatEventFilter(){
+ statDayFilter=$("statDaySelect")?.value||"";
+ statEventFilter=$("statEventSelect")?.value||"";
+ render();
+}
+function resetStatEventFilter(){
+ if(!statDayFilter&&!statEventFilter)return;
+ statEventFilter="";
+ render();
+}
+function statEventPlayerIds(day,eventType){
+ const ids=new Set();
+ logsForDay(day).forEach(log=>{
+   if(log.type==="conversation"&&eventType==="conversation"){
+     ids.add(log.sourceId);
+     (log.targetIds||[]).forEach(id=>ids.add(id));
+   }
+   if(log.type==="nomination"&&eventType==="nominated")ids.add(log.sourceId);
+   if(log.type==="nomination"&&eventType==="wasNominated")ids.add(log.targetId);
+   if(log.type==="nomination"&&eventType==="voted")(log.votes||[]).forEach(id=>ids.add(id));
+ });
+ return ids;
+}
+function cardCenter(id){
+ const card=field.querySelector(`.card[data-id="${id}"]`);
+ if(!card)return null;
+ return {x:card.offsetLeft+card.offsetWidth/2,y:card.offsetTop+card.offsetHeight/2};
+}
+function applyStatEventOverlay(){
+ if(!isDeathOnlyWorld()||!statDayFilter||!statEventFilter)return;
+ const day=+statDayFilter;
+ if(statEventFilter==="conversation"){
+   const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+   svg.classList.add("stat-link-layer");
+   svg.setAttribute("viewBox",`0 0 ${field.clientWidth} ${field.clientHeight}`);
+   logsForDay(day).forEach(log=>{
+     if(log.type!=="conversation")return;
+     const from=cardCenter(log.sourceId);
+     if(!from)return;
+     (log.targetIds||[]).forEach(id=>{
+       const to=cardCenter(id);
+       if(!to)return;
+       const line=document.createElementNS("http://www.w3.org/2000/svg","line");
+       line.setAttribute("x1",from.x);
+       line.setAttribute("y1",from.y);
+       line.setAttribute("x2",to.x);
+       line.setAttribute("y2",to.y);
+       svg.append(line);
+     });
+   });
+   field.prepend(svg);
+   return;
+ }
+ statEventPlayerIds(day,statEventFilter).forEach(id=>{
+   field.querySelector(`.card[data-id="${id}"]`)?.classList.add("stat-event-highlight");
+ });
 }
 function separateStatCards(){
  if(!isDeathOnlyWorld())return;
@@ -938,6 +1024,7 @@ activeTouchPointers.clear();
 document.body.classList.toggle("stat-world",isDeathOnlyWorld());
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 renderWorldTabs();
+renderStatControls();
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
 let dayBadge=document.createElement("div");
@@ -1038,6 +1125,7 @@ people.forEach(p=>{
  field.append(card);
 });
 separateStatCards();
+applyStatEventOverlay();
 }
 
 function renderWorldTabs(){
@@ -1393,6 +1481,12 @@ document.addEventListener("pointerdown",e=>{
  if(!e.target.closest(".role-row"))closeRoleMenus();
  if(!e.target.closest(".person-row"))closePersonMenus();
 });
+field.addEventListener("pointerdown",e=>{
+ if(!isDeathOnlyWorld()||!statEventFilter)return;
+ e.preventDefault();
+ e.stopPropagation();
+ resetStatEventFilter();
+},true);
 document.querySelector(".system-panel")?.addEventListener("toggle",()=>{
  closeAllMenus();
  render();
