@@ -89,7 +89,6 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .world-tab{min-height:38px;padding:7px 14px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,rgba(72,29,109,.95),rgba(22,10,37,.98));border:1px solid var(--line);border-bottom-color:#9d6bd5;color:#fff8ee;font-size:20px;text-transform:none;text-shadow:none}
 .world-tab.active{background:linear-gradient(180deg,#f4d36f,#8f5b16);border-color:var(--gold);color:#1c0f05}
 .world-tab.add{min-width:42px;text-align:center;font-weight:bold}
-.lock-toggle-row{margin:-2px 0 10px;display:flex;align-items:center;gap:10px;color:var(--ink)}
 .switch{position:relative;display:inline-flex;align-items:center;gap:10px;min-height:38px;cursor:pointer}
 .switch input{position:absolute;opacity:0;width:1px;height:1px}
 .switch-track{position:relative;width:58px;height:30px;border-radius:999px;background:#170b25;border:1px solid var(--line);box-shadow:inset 0 2px 8px rgba(0,0,0,.45);transition:.18s}
@@ -149,7 +148,6 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <div class=system-header><details class="panel system-panel"><summary>Система</summary><div class=top-area>
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
 <p><input id=rname placeholder="Роль"><button onclick="addRole()">Добавить роль</button><select id=rtype><option value="горожанин">горожанин</option><option value="изгой">изгой</option><option value="приспешник">приспешник</option><option value="демон">демон</option></select></p>
-<div class=lock-toggle-row><label class=switch><input id=fieldLockToggle type=checkbox onchange="setFieldLocked(this.checked)"><span class=switch-track></span><span class=switch-label>Зафиксировать поле</span></label></div>
 <p><button onclick="exportJson()">Экспорт</button>
 <button onclick="openImport()">Импорт</button>
 <button onclick="resetState()">Сброс</button>
@@ -180,7 +178,8 @@ function deathOnlyPersonFromMain(p){
 function currentWorld(){return worlds.find(w=>w.id===currentWorldId)||worlds[0];}
 function isMainWorld(){return currentWorldId===1;}
 function isDeathOnlyWorld(){return currentWorld()?.kind==="death-only";}
-function effectiveFieldLocked(){return fieldLocked||!isMainWorld();}
+function systemPanelOpen(){return !!document.querySelector(".system-panel")?.open;}
+function effectiveFieldLocked(){return !isMainWorld()||!systemPanelOpen();}
 function normalizeWorlds(){
  worlds=Array.isArray(worlds)?worlds:[];
  if(!worlds.length)worlds=[{id:1,name:"Основной",people:clonePeople(people)}];
@@ -934,20 +933,10 @@ function addWorld(){
  save();
  render();
 }
-function setFieldLocked(locked){
- if(!isMainWorld())return;
- fieldLocked=!!locked;
- closeAllMenus();
- save();
- render();
-}
-
 function render(){
 document.body.classList.toggle("stat-world",isDeathOnlyWorld());
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 renderWorldTabs();
-const fieldLockToggle=$("fieldLockToggle");
-if(fieldLockToggle){fieldLockToggle.checked=effectiveFieldLocked();fieldLockToggle.disabled=!isMainWorld();}
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
 let dayBadge=document.createElement("div");
@@ -1388,6 +1377,10 @@ document.addEventListener("pointerdown",e=>{
  if(!e.target.closest(".menu"))closeAllMenus();
  if(!e.target.closest(".role-row"))closeRoleMenus();
  if(!e.target.closest(".person-row"))closePersonMenus();
+});
+document.querySelector(".system-panel")?.addEventListener("toggle",()=>{
+ closeAllMenus();
+ render();
 });
 render();
 </script></body></html>
