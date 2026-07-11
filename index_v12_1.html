@@ -262,11 +262,17 @@ function roleHtml(person,id){
 function personRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>")||"<i>нет ролей</i>";}
 function cardRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>");}
 function bottomStatIds(all,metric,count=3){
- return all.slice().sort((a,b)=>a.stats[metric]-b.stats[metric]||a.person.name.localeCompare(b.person.name,"ru")).slice(0,count).map(item=>item.person.id);
+ const sorted=all.slice().sort((a,b)=>a.stats[metric]-b.stats[metric]||a.person.name.localeCompare(b.person.name,"ru"));
+ const cutoff=sorted[Math.min(count,sorted.length)-1]?.stats[metric];
+ return cutoff==null?[]:sorted.filter(item=>item.stats[metric]<=cutoff).map(item=>item.person.id);
 }
 function statAlertIds(metric,threshold){
  const all=people.map(person=>({person,stats:playerStats(person)}));
- if(metric==="conversations")return all.filter(item=>item.stats.conversations>0).sort((a,b)=>b.stats.conversations-a.stats.conversations||a.person.name.localeCompare(b.person.name,"ru")).slice(0,2).map(item=>item.person.id);
+ if(metric==="conversations"){
+   const sorted=all.filter(item=>item.stats.conversations>0).sort((a,b)=>b.stats.conversations-a.stats.conversations||a.person.name.localeCompare(b.person.name,"ru"));
+   const cutoff=sorted[Math.min(2,sorted.length)-1]?.stats.conversations;
+   return cutoff==null?[]:sorted.filter(item=>item.stats.conversations>=cutoff).map(item=>item.person.id);
+ }
  const direct=all.filter(item=>item.stats[metric]<=threshold).map(item=>item.person.id);
  return direct.length?direct:bottomStatIds(all,metric);
 }
