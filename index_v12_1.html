@@ -78,8 +78,8 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .field-nominate-btn,.field-filter-btn{position:absolute;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
 .field-nominate-btn{left:12px}
 .field-filter-btn{left:190px}
-.stats-panel{display:none;width:1000px;box-sizing:border-box;margin:14px 20px 0;padding:10px 12px;border:1px solid rgba(216,200,239,.55);border-radius:8px;background:linear-gradient(180deg,rgba(72,29,109,.95),rgba(22,10,37,.98));color:var(--ink);box-shadow:0 8px 22px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.12)}
-.stats-panel b{font-family:"Gabriela",Georgia,serif;color:#fff}
+.stats-panel{display:none;width:1000px;box-sizing:border-box;margin:14px 20px 0;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;box-shadow:0 5px 14px rgba(0,0,0,.32)}
+.stats-panel b{font-family:"Gabriela",Georgia,serif;color:#1c0f05}
 .stats-panel button{margin-left:10px;min-height:36px;padding:6px 10px;font-size:18px}
 .card b{display:block;border-bottom:1px solid rgba(0,0,0,.2);margin-bottom:5px;padding-bottom:3px;font-family:"Gabriela",Georgia,serif;font-size:22px;font-weight:bold;color:#130c15;text-shadow:0 1px 0 rgba(255,255,255,.35)}
 .card-icons{position:absolute;right:6px;top:4px;display:flex;flex-direction:row-reverse;align-items:center;gap:5px;line-height:1;pointer-events:none}
@@ -589,7 +589,7 @@ function renderPlayerStatsPanel(){
  if(!panel||!person){if(panel){panel.style.display="none";panel.innerHTML="";}return;}
  const stats=playerStats(person);
  panel.style.display="block";
- panel.innerHTML=`<b>${playerTitle(person)}</b>: номинировал ${stats.nominated}, номинирован ${stats.wasNominated}, приватных разговоров ${stats.conversations}, голосовал ${stats.voted}<button onclick="clearPlayerFilter()">Сбросить</button>`;
+ panel.innerHTML=`<b>${playerTitle(person)}</b><br>Номинировал: ${stats.nominated}<br>Номинирован: ${stats.wasNominated}<br>Приватных разговоров: ${stats.conversations}<br>Голосовал: ${stats.voted} <button onclick="clearPlayerFilter()">Сбросить</button>`;
 }
 function startPlayerFilterFromField(){
  filterPickPlayer=true;
