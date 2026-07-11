@@ -57,7 +57,6 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .day-badge{position:absolute;left:0;right:0;top:380px;text-align:center;font-family:Gabriola,"Palatino Linotype",Georgia,serif;font-size:64px;font-style:normal;font-variant:normal;font-weight:normal;color:rgba(218,190,255,.055);text-shadow:0 0 10px rgba(194,144,255,.055),0 2px 5px rgba(0,0,0,.18);pointer-events:none;user-select:none;-webkit-user-select:none}
 .field-wrap{padding:0 20px;box-sizing:content-box;width:1000px}
 .person{border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(70,30,104,.65));color:var(--ink);padding:10px;margin:10px 0;position:relative;width:270px;box-shadow:0 5px 14px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,255,.12)}
-.person.dead{border-color:#050405;box-shadow:0 0 0 1px #050405,0 5px 14px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,255,.12)}
 .person-row .person{flex:1;width:auto;min-width:0;margin:0}
 .person b{display:block;margin-bottom:3px}
 .drop{display:none;position:absolute;left:8px;top:34px;background:#fff;border:1px solid #999;padding:8px;z-index:10}
@@ -67,7 +66,8 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .card.color-red{background:linear-gradient(180deg,#f2c6d0,#bb596a);border-color:#873040}
 .card.color-green{background:linear-gradient(180deg,#d5eccb,#78a765);border-color:#4c743b}
 .card.color-yellow{background:linear-gradient(180deg,#fff3bc,#d9bc61);border-color:#9b7a2f}
-.card.dead{border-color:#050405;color:#171314;box-shadow:0 0 0 1px #050405,0 3px 9px rgba(0,0,0,.38),inset 0 0 0 999px rgba(115,110,116,.34);text-shadow:0 1px 0 rgba(255,255,255,.24)}
+.card.dead{color:#171314;box-shadow:0 3px 9px rgba(0,0,0,.38),inset 0 0 0 999px rgba(115,110,116,.34);text-shadow:0 1px 0 rgba(255,255,255,.24)}
+.card.dead::after{content:"";position:absolute;inset:5px;border-radius:6px;background:linear-gradient(35deg,transparent calc(50% - 7px),rgba(65,65,70,.52) calc(50% - 7px),rgba(65,65,70,.52) calc(50% + 7px),transparent calc(50% + 7px)),linear-gradient(-35deg,transparent calc(50% - 7px),rgba(65,65,70,.52) calc(50% - 7px),rgba(65,65,70,.52) calc(50% + 7px),transparent calc(50% + 7px));pointer-events:none;z-index:2}
 .card.dead b{color:#120e12;text-shadow:0 1px 0 rgba(255,255,255,.4)}
 .card.nomination-source{background:linear-gradient(180deg,#f4dda2,#c69a36);border-color:#7f5515}
 .card.nomination-target{cursor:pointer;box-shadow:0 0 0 2px rgba(11,107,47,.35)}
