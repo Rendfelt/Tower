@@ -53,6 +53,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .day-badge{position:absolute;left:0;right:0;top:380px;text-align:center;font-family:Gabriola,"Palatino Linotype",Georgia,serif;font-size:64px;font-style:normal;font-variant:normal;font-weight:normal;color:rgba(218,190,255,.055);text-shadow:0 0 10px rgba(194,144,255,.055),0 2px 5px rgba(0,0,0,.18);pointer-events:none;user-select:none;-webkit-user-select:none}
 .field-wrap{padding:0 20px;box-sizing:content-box;width:1000px}
 .person{border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(70,30,104,.65));color:var(--ink);padding:10px;margin:10px 0;position:relative;width:270px;box-shadow:0 5px 14px rgba(0,0,0,.32),inset 0 0 0 1px rgba(255,255,255,.12)}
+.person-row .person{flex:1;width:auto;min-width:0;margin:0}
 .person b{display:block;margin-bottom:3px}
 .drop{display:none;position:absolute;left:8px;top:34px;background:#fff;border:1px solid #999;padding:8px;z-index:10}
 .drop label{display:block}
@@ -95,10 +96,10 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .role-check input{flex:0 0 auto;width:24px;height:24px}
 .icon-check{display:flex!important;align-items:center;gap:10px;min-height:44px;font-size:21px}
 .icon-check input{flex:0 0 auto;width:24px;height:24px}
-.role-row{display:flex;align-items:flex-start;gap:8px;margin:6px 0;position:relative}
-.role-row button{min-height:40px;font-size:20px;padding:7px 12px}
-.role-menu{display:none;position:absolute;left:0;top:44px;background:linear-gradient(180deg,#2c1645,#13091f);border:1px solid rgba(216,200,239,.55);border-radius:8px;padding:7px;z-index:20;box-shadow:0 8px 18px rgba(0,0,0,.5);min-width:190px}
-.role-menu button{display:block;width:100%;min-height:44px;font-family:"Alegreya SC",Georgia,serif;font-size:20px;font-weight:normal;text-transform:none;text-shadow:none;padding:10px 12px;margin:3px 0;text-align:left;background:transparent;border-color:transparent;color:#fff8ee}
+.role-row,.person-row{display:flex;align-items:flex-start;gap:8px;margin:6px 0;position:relative}
+.role-row button,.person-row button{min-height:40px;font-size:20px;padding:7px 12px}
+.role-menu,.person-menu{display:none;position:absolute;left:0;top:44px;background:linear-gradient(180deg,#2c1645,#13091f);border:1px solid rgba(216,200,239,.55);border-radius:8px;padding:7px;z-index:20;box-shadow:0 8px 18px rgba(0,0,0,.5);min-width:190px}
+.role-menu button,.person-menu button{display:block;width:100%;min-height:44px;font-family:"Alegreya SC",Georgia,serif;font-size:20px;font-weight:normal;text-transform:none;text-shadow:none;padding:10px 12px;margin:3px 0;text-align:left;background:transparent;border-color:transparent;color:#fff8ee}
 input,button,select{font-family:"Alegreya SC",Georgia,serif;font-size:20px;border:1px solid var(--line);border-radius:8px;background:#170b25;color:var(--ink);padding:9px 10px}
 input::placeholder{color:#bba5db}
 select option{background:#170b25;color:var(--ink)}
@@ -475,6 +476,9 @@ function deleteRole(role){
 function closeRoleMenus(except){
  document.querySelectorAll(".role-menu").forEach(m=>{if(m!==except)m.style.display="none";});
 }
+function closePersonMenus(except){
+ document.querySelectorAll(".person-menu").forEach(m=>{if(m!==except)m.style.display="none";});
+}
 function deletePerson(person){
  if(!confirm(`Удалить игрока "${person.name}"?`))return;
  people=people.filter(p=>p.id!==person.id);
@@ -709,6 +713,7 @@ roles.forEach(r=>{
    e.stopPropagation();
    const next=roleMenu.style.display==="block"?"none":"block";
    closeRoleMenus(roleMenu);
+   closePersonMenus();
    roleMenu.style.display=next;
  };
  row.append(menuBtn,info,roleMenu);
@@ -720,7 +725,25 @@ people.forEach(p=>{
  let box=document.createElement("div");box.className="person";
  box.dataset.id=p.id;
  box.innerHTML=`<b>${playerTitle(p)}</b><div>${personRolesHtml(p)}</div>`;
- plist.append(box);
+ let personRow=document.createElement("div");
+ personRow.className="person-row";
+ let menuBtn=document.createElement("button");
+ menuBtn.textContent="⋮";
+ let personMenu=document.createElement("div");
+ personMenu.className="person-menu";
+ let del=document.createElement("button");
+ del.textContent="Удалить";
+ del.onclick=()=>deletePerson(p);
+ personMenu.append(del);
+ menuBtn.onclick=e=>{
+   e.stopPropagation();
+   const next=personMenu.style.display==="block"?"none":"block";
+   closePersonMenus(personMenu);
+   closeRoleMenus();
+   personMenu.style.display=next;
+ };
+ personRow.append(menuBtn,box,personMenu);
+ plist.append(personRow);
 
  let card=document.createElement("div");
  card.className="card";
@@ -785,10 +808,7 @@ function fillCardMenu(person,menu){
  let unconfirmBtn=document.createElement("button");
  unconfirmBtn.textContent="Убрать подтвержденную роль";
  unconfirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu,"remove");
- let deleteBtn=document.createElement("button");
- deleteBtn.textContent="Удалить игрока";
- deleteBtn.onclick=()=>deletePerson(person);
- menu.append(roleBtn,conversationBtn,statsBtn,confirmBtn,deadBtn,colorBtn,iconBtn,filterBtn,unconfirmBtn,deleteBtn);
+ menu.append(roleBtn,conversationBtn,statsBtn,confirmBtn,deadBtn,colorBtn,iconBtn,filterBtn,unconfirmBtn);
 }
 
 function setPlayerColor(person,color){
@@ -1007,6 +1027,7 @@ function setupCardInteractions(card,menu,p){
 document.addEventListener("pointerdown",e=>{
  if(!e.target.closest(".menu"))closeAllMenus();
  if(!e.target.closest(".role-row"))closeRoleMenus();
+ if(!e.target.closest(".person-row"))closePersonMenus();
 });
 render();
 </script></body></html>
