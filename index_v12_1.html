@@ -104,7 +104,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .stats-panel button{margin-left:10px;min-height:36px;padding:6px 10px;font-size:18px}
 .stat-world-controls{display:none;width:1000px;box-sizing:border-box;margin:10px 20px 0;gap:8px}
 body.stat-world .stat-world-controls{display:flex}
-.stat-world-controls select{font-size:20px;padding:8px 10px}
+.stat-world-controls select,.stat-world-controls button{font-size:20px;padding:8px 10px}
 .card.stat-event-highlight{box-shadow:0 0 0 4px rgba(244,211,111,.95),0 0 24px rgba(244,211,111,.55),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .stat-link-layer{position:absolute;inset:0;pointer-events:none;z-index:3}
 .stat-link-layer line{stroke:#75d7ff;stroke-width:8;stroke-linecap:round;opacity:.78;filter:drop-shadow(0 0 5px rgba(117,215,255,.65))}
@@ -163,11 +163,11 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
-<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect onchange="setStatEventFilter()"></select><select id=statEventSelect onchange="setStatEventFilter()"><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
+<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="";
+let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="",statEventVisible=false;
 const activeTouchPointers=new Set();
 function cancelAllCardGestures(){
  document.querySelectorAll(".card").forEach(card=>{
@@ -340,14 +340,15 @@ function renderStatControls(){
  daySelect.value=statDayFilter;
  eventSelect.value=statEventFilter;
 }
-function setStatEventFilter(){
+function showStatEventFilter(){
  statDayFilter=$("statDaySelect")?.value||"";
  statEventFilter=$("statEventSelect")?.value||"";
+ statEventVisible=!!(statDayFilter&&statEventFilter);
  render();
 }
 function resetStatEventFilter(){
- if(!statDayFilter&&!statEventFilter)return;
- statEventFilter="";
+ if(!statEventVisible)return;
+ statEventVisible=false;
  render();
 }
 function statEventPlayerIds(day,eventType){
@@ -369,7 +370,7 @@ function cardCenter(id){
  return {x:card.offsetLeft+card.offsetWidth/2,y:card.offsetTop+card.offsetHeight/2};
 }
 function applyStatEventOverlay(){
- if(!isDeathOnlyWorld()||!statDayFilter||!statEventFilter)return;
+ if(!isDeathOnlyWorld()||!statEventVisible||!statDayFilter||!statEventFilter)return;
  const day=+statDayFilter;
  if(statEventFilter==="conversation"){
    const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
@@ -1482,7 +1483,7 @@ document.addEventListener("pointerdown",e=>{
  if(!e.target.closest(".person-row"))closePersonMenus();
 });
 field.addEventListener("pointerdown",e=>{
- if(!isDeathOnlyWorld()||!statEventFilter)return;
+ if(!isDeathOnlyWorld()||!statEventVisible)return;
  e.preventDefault();
  e.stopPropagation();
  resetStatEventFilter();
