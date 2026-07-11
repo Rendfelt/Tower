@@ -1374,7 +1374,14 @@ function setupCardInteractions(card,menu,p){
 }
 
 document.addEventListener("pointerdown",e=>{
- if(!e.target.closest(".menu"))closeAllMenus();
+ if(!e.target.closest(".menu")&&anyCardMenuOpen()){
+   e.preventDefault();
+   e.stopPropagation();
+   closeAllMenus();
+   return;
+ }
+},true);
+document.addEventListener("pointerdown",e=>{
  if(!e.target.closest(".role-row"))closeRoleMenus();
  if(!e.target.closest(".person-row"))closePersonMenus();
 });
