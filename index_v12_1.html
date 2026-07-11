@@ -47,6 +47,8 @@ body.stat-world .field-wrap{width:1200px}
 body.stat-world .speech-controls{width:1200px}
 .speech-controls button{width:120px;height:120px;min-width:120px;min-height:120px;padding:0;font-size:56px;line-height:1;text-align:center}
 .speech-controls select{font-size:32px;padding:22px 24px;min-width:260px;min-height:88px}
+.speech-surface{width:1000px;height:270px;box-sizing:border-box;margin:14px 20px 0;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,rgba(38,17,62,.92),rgba(15,8,28,.96));box-shadow:inset 0 0 24px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:28px;touch-action:none;user-select:none;-webkit-user-select:none}
+body.stat-world .speech-surface{width:1200px}
 .logbox{height:270px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(38,17,62,.98),rgba(15,8,28,.98));color:var(--ink);padding:10px 12px;font-size:20px;box-shadow:inset 0 0 24px rgba(0,0,0,.35)}
 .logitem{padding:6px 8px;border-bottom:1px solid rgba(216,200,239,.18);border-radius:6px;cursor:pointer}
 .logitem.selected{background:rgba(216,177,92,.18);box-shadow:inset 0 0 0 1px rgba(255,208,51,.55)}
@@ -167,7 +169,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
-<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details><div class=speech-controls><button onclick="speakSelectedDayHistory()">▶</button><button onclick="toggleSpeechPause()">⏸</button><button onclick="stopSpeech()">■</button><select id=speechDaySelect></select></div>
+<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details><div id=speechSurface class=speech-surface>Свайп: предыдущий / следующий лог<br>Долгое нажатие: предыдущий / следующий день</div><div class=speech-controls><button onclick="speakSelectedDayHistory()">▶</button><button onclick="toggleSpeechPause()">⏸</button><button onclick="stopSpeech()">■</button><select id=speechDaySelect></select></div>
 
 <script>
 const KEY="mafia-demo-state";
@@ -331,7 +333,7 @@ function logsForDay(day){
    return current===day;
  });
 }
-let speechQueue=[],speechQueueTimer=null;
+let speechQueue=[],speechQueueTimer=null,speechQueueDone=null,speechPlaybackDay=0,speechPlaybackLogs=[],speechPlaybackIndex=0;
 function speakText(text,onend){
  if(!("speechSynthesis" in window)||!window.SpeechSynthesisUtterance)return;
  const utterance=new SpeechSynthesisUtterance(text);
@@ -340,14 +342,15 @@ function speakText(text,onend){
  utterance.onend=()=>{if(onend)onend();};
  window.speechSynthesis.speak(utterance);
 }
-function speakQueue(items){
+function speakQueue(items,onDone){
  if(!("speechSynthesis" in window))return;
  window.speechSynthesis.cancel();
  if(speechQueueTimer)clearTimeout(speechQueueTimer);
+ speechQueueDone=onDone||null;
  speechQueue=items.slice();
  const next=()=>{
    const item=speechQueue.shift();
-   if(!item)return;
+   if(!item){const done=speechQueueDone;speechQueueDone=null;if(done)done();return;}
    if(!item.text){speechQueueTimer=setTimeout(next,item.pause||900);return;}
    speakText(item.text,()=>{speechQueueTimer=setTimeout(next,item.pause||900);});
  };
@@ -377,16 +380,40 @@ function speechItemsForLog(log){
  }
  return [{text:logText(log),pause:1300}];
 }
+function prepareSpeechDay(day){
+ speechPlaybackDay=day;
+ speechPlaybackLogs=logsForDay(day);
+}
+function playSpeechLog(index,withIntro=false){
+ if(!speechPlaybackDay){speakQueue([{text:"День еще не начался.",pause:0}]);return;}
+ if(!speechPlaybackLogs.length){speakQueue([{text:`День ${speechPlaybackDay}. Событий пока нет.`,pause:0}]);return;}
+ speechPlaybackIndex=Math.min(Math.max(0,index),speechPlaybackLogs.length-1);
+ const items=[];
+ if(withIntro)items.push({text:`История дня ${speechPlaybackDay}`,pause:1200});
+ items.push(...speechItemsForLog(speechPlaybackLogs[speechPlaybackIndex]),{text:"",pause:900});
+ speakQueue(items,()=>{
+   if(speechPlaybackIndex<speechPlaybackLogs.length-1)playSpeechLog(speechPlaybackIndex+1);
+ });
+}
 function speakDayHistory(day){
- if(!day){speakQueue([{text:"День еще не начался.",pause:0}]);return;}
- const dayLogs=logsForDay(day);
- if(!dayLogs.length){speakQueue([{text:`День ${day}. Событий пока нет.`,pause:0}]);return;}
- const items=[{text:`История дня ${day}`,pause:1200}];
- dayLogs.forEach(log=>items.push(...speechItemsForLog(log),{text:"",pause:900}));
- speakQueue(items.filter(item=>item.text||item.pause));
+ prepareSpeechDay(day);
+ playSpeechLog(0,true);
 }
 function speakSelectedDayHistory(){
  speakDayHistory(+($("speechDaySelect")?.value||dayNumber||0));
+}
+function shiftSpeechLog(delta){
+ const day=+($("speechDaySelect")?.value||speechPlaybackDay||dayNumber||0);
+ if(day!==speechPlaybackDay)prepareSpeechDay(day);
+ playSpeechLog(speechPlaybackIndex+delta);
+}
+function shiftSpeechDay(delta){
+ const select=$("speechDaySelect");
+ const max=Math.max(0,dayNumber);
+ const current=+(select?.value||dayNumber||0);
+ const next=Math.min(Math.max(1,current+delta),max);
+ if(select&&next)select.value=String(next);
+ speakDayHistory(next);
 }
 function toggleSpeechPause(){
  if(!("speechSynthesis" in window))return;
@@ -396,6 +423,7 @@ function toggleSpeechPause(){
 function stopSpeech(){
  speechQueue=[];
  if(speechQueueTimer)clearTimeout(speechQueueTimer);
+ speechQueueDone=null;
  if("speechSynthesis" in window)window.speechSynthesis.cancel();
 }
 function logDayAtIndex(index){
@@ -653,6 +681,43 @@ function renderSpeechControls(){
  const value=select.value;
  select.innerHTML=Array.from({length:Math.max(0,dayNumber)},(_,i)=>`<option value="${i+1}">День ${i+1}</option>`).join("");
  select.value=+value>0&&+value<=dayNumber?value:(dayNumber?String(dayNumber):"");
+}
+function setupSpeechSurface(){
+ const surface=$("speechSurface");
+ if(!surface||surface._ready)return;
+ surface._ready=true;
+ let startX=0,startY=0,longTimer=null,longDone=false;
+ const clearLong=()=>{if(longTimer)clearTimeout(longTimer);longTimer=null;};
+ surface.addEventListener("pointerdown",e=>{
+   if(e.pointerType==="touch"&&activeTouchPointers.size>1)return;
+   e.preventDefault();
+   startX=e.clientX;
+   startY=e.clientY;
+   longDone=false;
+   surface.setPointerCapture(e.pointerId);
+   clearLong();
+   longTimer=setTimeout(()=>{
+     longDone=true;
+     const rect=surface.getBoundingClientRect();
+     shiftSpeechDay(e.clientX<rect.left+rect.width/2?-1:1);
+   },650);
+ });
+ surface.addEventListener("pointermove",e=>{
+   if(Math.hypot(e.clientX-startX,e.clientY-startY)>18)clearLong();
+ });
+ const finish=e=>{
+   clearLong();
+   if(surface.hasPointerCapture(e.pointerId))surface.releasePointerCapture(e.pointerId);
+   if(longDone)return;
+   const dx=e.clientX-startX;
+   const dy=e.clientY-startY;
+   if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.4)shiftSpeechLog(dx<0?-1:1);
+ };
+ surface.addEventListener("pointerup",finish);
+ surface.addEventListener("pointercancel",e=>{
+   clearLong();
+   if(surface.hasPointerCapture(e.pointerId))surface.releasePointerCapture(e.pointerId);
+ });
 }
 function resetLogFilters(){
  const playerFilter=$("logPlayerFilter");
@@ -1605,6 +1670,7 @@ document.querySelector(".system-panel")?.addEventListener("toggle",()=>{
  closeAllMenus();
  render();
 });
+setupSpeechSurface();
 render();
 </script></body></html>
 
