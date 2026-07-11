@@ -75,10 +75,17 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
-.field-nominate-btn,.field-filter-btn,.field-lock-btn{position:absolute;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
+.field-nominate-btn,.field-filter-btn{position:absolute;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
 .field-nominate-btn{left:12px}
 .field-filter-btn{left:190px}
-.field-lock-btn{left:290px}
+.lock-toggle-row{margin:-2px 0 10px;display:flex;align-items:center;gap:10px;color:var(--ink)}
+.switch{position:relative;display:inline-flex;align-items:center;gap:10px;min-height:38px;cursor:pointer}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch-track{position:relative;width:58px;height:30px;border-radius:999px;background:#170b25;border:1px solid var(--line);box-shadow:inset 0 2px 8px rgba(0,0,0,.45);transition:.18s}
+.switch-track::after{content:"";position:absolute;width:24px;height:24px;left:3px;top:2px;border-radius:50%;background:linear-gradient(180deg,#f1e0b8,#d2ae67);box-shadow:0 2px 8px rgba(0,0,0,.4);transition:.18s}
+.switch input:checked+.switch-track{background:linear-gradient(180deg,var(--purple3),var(--purple2) 48%,var(--purple))}
+.switch input:checked+.switch-track::after{transform:translateX(28px)}
+.switch-label{font-size:20px;color:var(--ink)}
 .stats-panel{display:none;width:1000px;box-sizing:border-box;margin:14px 20px 0;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;box-shadow:0 5px 14px rgba(0,0,0,.32)}
 .stats-panel b{font-family:"Gabriela",Georgia,serif;color:#1c0f05}
 .stats-panel button{margin-left:10px;min-height:36px;padding:6px 10px;font-size:18px}
@@ -123,6 +130,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <div class=top-area><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt="">
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
 <p><input id=rname placeholder="Роль"><button onclick="addRole()">Добавить роль</button></p>
+<div class=lock-toggle-row><label class=switch><input id=fieldLockToggle type=checkbox onchange="setFieldLocked(this.checked)"><span class=switch-track></span><span class=switch-label>Зафиксировать поле</span></label></div>
 <p><button onclick="exportJson()">Экспорт</button>
 <button onclick="openImport()">Импорт</button>
 <button onclick="resetState()">Сброс</button>
@@ -712,8 +720,8 @@ function cancelConversation(){
  conversationTargetIds=[];
  render();
 }
-function toggleFieldLocked(){
- fieldLocked=!fieldLocked;
+function setFieldLocked(locked){
+ fieldLocked=!!locked;
  closeAllMenus();
  save();
  render();
@@ -721,6 +729,8 @@ function toggleFieldLocked(){
 
 function render(){
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
+const fieldLockToggle=$("fieldLockToggle");
+if(fieldLockToggle)fieldLockToggle.checked=fieldLocked;
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
 let nominateFieldBtn=document.createElement("button");
@@ -733,11 +743,6 @@ filterFieldBtn.className="field-filter-btn";
 filterFieldBtn.textContent="Фильтр";
 filterFieldBtn.onclick=e=>{e.stopPropagation();startPlayerFilterFromField();};
 field.append(filterFieldBtn);
-let lockFieldBtn=document.createElement("button");
-lockFieldBtn.className="field-lock-btn";
-lockFieldBtn.textContent=fieldLocked?"Поле зафиксировано":"Зафиксировать поле";
-lockFieldBtn.onclick=e=>{e.stopPropagation();toggleFieldLocked();};
-field.append(lockFieldBtn);
 let dayBadge=document.createElement("div");
 dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
