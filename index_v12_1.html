@@ -107,6 +107,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .menu label{display:block;margin:8px 0;}
 .role-check{display:flex!important;align-items:flex-start;gap:10px;min-height:44px;font-size:21px;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
 .role-check input{flex:0 0 auto;width:24px;height:24px}
+.role-type-separator{height:1px;margin:9px 4px;background:rgba(216,200,239,.32)}
 .icon-check{display:flex!important;align-items:center;gap:10px;min-height:44px;font-size:21px}
 .icon-check input{flex:0 0 auto;width:24px;height:24px}
 .role-row,.person-row{display:flex;align-items:flex-start;gap:8px;margin:6px 0;position:relative}
@@ -129,7 +130,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 
 <div class=top-area><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt="">
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
-<p><input id=rname placeholder="Роль"><select id=rtype><option value="горожанин">горожанин</option><option value="изгой">изгой</option><option value="приспешник">приспешник</option><option value="демон">демон</option></select><button onclick="addRole()">Добавить роль</button></p>
+<p><input id=rname placeholder="Роль"><button onclick="addRole()">Добавить роль</button><select id=rtype><option value="горожанин">горожанин</option><option value="изгой">изгой</option><option value="приспешник">приспешник</option><option value="демон">демон</option></select></p>
 <div class=lock-toggle-row><label class=switch><input id=fieldLockToggle type=checkbox onchange="setFieldLocked(this.checked)"><span class=switch-track></span><span class=switch-label>Зафиксировать поле</span></label></div>
 <p><button onclick="exportJson()">Экспорт</button>
 <button onclick="openImport()">Импорт</button>
@@ -148,6 +149,16 @@ const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).leng
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 const ROLE_TYPES=["горожанин","изгой","приспешник","демон"];
 function normalizeRoles(){roles.forEach(r=>{r.type=ROLE_TYPES.includes(r.type)?r.type:"горожанин";});}
+function forEachRoleByType(callback){
+ let hasPreviousType=false;
+ ROLE_TYPES.forEach(type=>{
+   const group=roles.filter(r=>(ROLE_TYPES.includes(r.type)?r.type:"горожанин")===type);
+   if(!group.length)return;
+   if(hasPreviousType)callback(null,type);
+   group.forEach(r=>callback(r,type));
+   hasPreviousType=true;
+ });
+}
 function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.icons=Array.isArray(p.icons)?p.icons:(p.icon?[p.icon]:[]);p.icons=p.icons.filter(icon=>["heart","eye","cross","smile"].includes(icon));delete p.icon;p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id)).slice(0,1);});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
@@ -948,7 +959,13 @@ function openIconEditor(person,menu){
 
 function openRoleEditor(person,menu){
  menu.innerHTML="";
- roles.forEach(r=>{
+ forEachRoleByType((r)=>{
+   if(!r){
+     let sep=document.createElement("div");
+     sep.className="role-type-separator";
+     menu.append(sep);
+     return;
+   }
    let l=document.createElement("label");
    l.className="role-check";
    let c=document.createElement("input");
@@ -975,7 +992,13 @@ function openConfirmedRoleEditor(person,menu){
    empty.textContent="Нет ролей";
    menu.append(empty);
  }
- roles.forEach(r=>{
+ forEachRoleByType((r)=>{
+   if(!r){
+     let sep=document.createElement("div");
+     sep.className="role-type-separator";
+     menu.append(sep);
+     return;
+   }
    let b=document.createElement("button");
    b.className="role-check";
    b.textContent=(person.confirmedRoles||[]).includes(r.id)?`✓ ${r.name}`:r.name;
