@@ -313,15 +313,16 @@ function separateStatCards(){
  if(!isDeathOnlyWorld())return;
  const gap=20;
  const wallGap=10;
+ const sourceSize=1000;
  const cards=[...field.querySelectorAll(".card")].map(card=>{
    const person=people.find(p=>p.id===+card.dataset.id);
    if(!person)return null;
    const item={card,person,x:person.x||0,y:person.y||0,w:card.offsetWidth,h:card.offsetHeight};
    const distances=[
      {wall:"left",value:item.x},
-     {wall:"right",value:field.clientWidth-(item.x+item.w)},
+     {wall:"right",value:sourceSize-(item.x+item.w)},
      {wall:"top",value:item.y},
-     {wall:"bottom",value:field.clientHeight-(item.y+item.h)}
+     {wall:"bottom",value:sourceSize-(item.y+item.h)}
    ];
    item.wall=distances.sort((a,b)=>a.value-b.value)[0].wall;
    item.axis=(item.wall==="left"||item.wall==="right")?"y":"x";
