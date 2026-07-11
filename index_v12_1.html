@@ -306,6 +306,30 @@ function cardHtml(person,votes){
    +(person.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"")
    +cardDetailsHtml(person);
 }
+function separateStatCards(){
+ if(!isDeathOnlyWorld())return;
+ const gap=2;
+ const cards=[...field.querySelectorAll(".card")].map(card=>({card,person:people.find(p=>p.id===+card.dataset.id)})).filter(item=>item.person);
+ for(let pass=0;pass<8;pass++){
+   let moved=false;
+   for(let i=0;i<cards.length;i++){
+     for(let j=i+1;j<cards.length;j++){
+       const a=cards[i],b=cards[j];
+       const ax=a.person.x,ay=a.person.y,aw=a.card.offsetWidth,ah=a.card.offsetHeight;
+       const bx=b.person.x,by=b.person.y,bw=b.card.offsetWidth,bh=b.card.offsetHeight;
+       const overlapX=Math.min(ax+aw+gap,bx+bw+gap)-Math.max(ax,bx);
+       const overlapY=Math.min(ay+ah+gap,by+bh+gap)-Math.max(ay,by);
+       if(overlapX<=0||overlapY<=0)continue;
+       if(overlapX<overlapY)b.person.x=Math.min(Math.max(0,field.clientWidth-bw),b.person.x+overlapX);
+       else b.person.y=Math.min(Math.max(0,field.clientHeight-bh),b.person.y+overlapY);
+       b.card.style.left=b.person.x+"px";
+       b.card.style.top=b.person.y+"px";
+       moved=true;
+     }
+   }
+   if(!moved)break;
+ }
+}
 function refreshRoleViews(){
  const votes=currentVotes();
  document.querySelectorAll(".person").forEach(box=>{
@@ -1001,6 +1025,7 @@ people.forEach(p=>{
 
  field.append(card);
 });
+separateStatCards();
 }
 
 function renderWorldTabs(){
