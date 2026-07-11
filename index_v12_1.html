@@ -312,7 +312,17 @@ function separateStatCards(){
  const placed=[];
  const cards=[...field.querySelectorAll(".card")].map(card=>{
    const person=people.find(p=>p.id===+card.dataset.id);
-   return person?{card,person,x:person.x||0,y:person.y||0,w:card.offsetWidth,h:card.offsetHeight}:null;
+   if(!person)return null;
+   const item={card,person,x:person.x||0,y:person.y||0,w:card.offsetWidth,h:card.offsetHeight};
+   const distances=[
+     {wall:"left",value:item.x},
+     {wall:"right",value:field.clientWidth-(item.x+item.w)},
+     {wall:"top",value:item.y},
+     {wall:"bottom",value:field.clientHeight-(item.y+item.h)}
+   ];
+   item.wall=distances.sort((a,b)=>a.value-b.value)[0].wall;
+   item.axis=(item.wall==="left"||item.wall==="right")?"y":"x";
+   return item;
  }).filter(Boolean).sort((a,b)=>a.y-b.y||a.x-b.x);
  const overlaps=(candidate)=>placed.some(item=>candidate.x<item.x+item.w+gap&&candidate.x+candidate.w+gap>item.x&&candidate.y<item.y+item.h+gap&&candidate.y+candidate.h+gap>item.y);
  const clampCandidate=(item,x,y)=>({
@@ -324,30 +334,16 @@ function separateStatCards(){
  cards.forEach(item=>{
    let best=clampCandidate(item,item.x,item.y);
    let bestScore=overlaps(best)?Infinity:0;
-   const maxRadius=Math.max(field.clientWidth,field.clientHeight);
-   for(let radius=8;bestScore===Infinity&&radius<=maxRadius;radius+=8){
-     for(let dx=-radius;dx<=radius;dx+=8){
-       const candidates=[
-         clampCandidate(item,item.x+dx,item.y-radius),
-         clampCandidate(item,item.x+dx,item.y+radius)
-       ];
-       candidates.forEach(candidate=>{
-         if(overlaps(candidate))return;
-         const score=(candidate.x-item.x)**2+(candidate.y-item.y)**2;
-         if(score<bestScore){best=candidate;bestScore=score;}
-       });
-     }
-     for(let dy=-radius+8;dy<=radius-8;dy+=8){
-       const candidates=[
-         clampCandidate(item,item.x-radius,item.y+dy),
-         clampCandidate(item,item.x+radius,item.y+dy)
-       ];
-       candidates.forEach(candidate=>{
-         if(overlaps(candidate))return;
-         const score=(candidate.x-item.x)**2+(candidate.y-item.y)**2;
-         if(score<bestScore){best=candidate;bestScore=score;}
-       });
-     }
+   const maxOffset=item.axis==="y"?field.clientHeight:field.clientWidth;
+   for(let offset=8;bestScore===Infinity&&offset<=maxOffset;offset+=8){
+     const candidates=item.axis==="y"
+       ?[clampCandidate(item,item.x,item.y-offset),clampCandidate(item,item.x,item.y+offset)]
+       :[clampCandidate(item,item.x-offset,item.y),clampCandidate(item,item.x+offset,item.y)];
+     candidates.forEach(candidate=>{
+       if(overlaps(candidate))return;
+       const score=(candidate.x-item.x)**2+(candidate.y-item.y)**2;
+       if(score<bestScore){best=candidate;bestScore=score;}
+     });
    }
    item.card.style.left=best.x+"px";
    item.card.style.top=best.y+"px";
