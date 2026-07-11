@@ -137,7 +137,7 @@ const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
-function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.icons=Array.isArray(p.icons)?p.icons:(p.icon?[p.icon]:[]);p.icons=p.icons.filter(icon=>["heart","eye","cross","smile"].includes(icon));delete p.icon;p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
+function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.icons=Array.isArray(p.icons)?p.icons:(p.icon?[p.icon]:[]);p.icons=p.icons.filter(icon=>["heart","eye","cross","smile"].includes(icon));delete p.icon;p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id)).slice(0,1);});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
 function roleIsCrossed(person,id){
@@ -549,15 +549,14 @@ function fitCardMenu(card,menu){
 function setConfirmedRole(person,roleId){
  people.forEach(p=>{p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>id!==roleId);});
  if(!person.roles.includes(roleId))person.roles.push(roleId);
- person.confirmedRoles=person.confirmedRoles||[];
- person.confirmedRoles.push(roleId);
+ person.confirmedRoles=[roleId];
  save();
- render();
+ refreshRoleViews();
 }
-function removeConfirmedRole(person,roleId){
- person.confirmedRoles=(person.confirmedRoles||[]).filter(id=>id!==roleId);
+function removeConfirmedRole(person){
+ person.confirmedRoles=[];
  save();
- render();
+ refreshRoleViews();
 }
 function playerName(id){return people.find(p=>p.id===id)?.name||"?";}
 function currentVotingLog(){
@@ -836,11 +835,11 @@ function fillCardMenu(person,menu){
  iconBtn.textContent="Иконка";
  iconBtn.onclick=()=>openIconEditor(person,menu);
  let confirmBtn=document.createElement("button");
- confirmBtn.textContent="Добавить подтвержденную роль";
- confirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu,"add");
+ confirmBtn.textContent="Проверенная роль";
+ confirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu);
  let unconfirmBtn=document.createElement("button");
- unconfirmBtn.textContent="Убрать подтвержденную роль";
- unconfirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu,"remove");
+ unconfirmBtn.textContent="Снять проверенную роль";
+ unconfirmBtn.onclick=()=>{removeConfirmedRole(person);closeAllMenus();};
  menu.append(roleBtn,conversationBtn,confirmBtn,deadBtn,colorBtn,iconBtn,unconfirmBtn);
 }
 
@@ -948,24 +947,31 @@ function openRoleEditor(person,menu){
 }
 
 
-function openConfirmedRoleEditor(person,menu,mode){
+function openConfirmedRoleEditor(person,menu){
  menu.innerHTML="";
- const list=mode==="add"?roles:roles.filter(r=>(person.confirmedRoles||[]).includes(r.id));
- if(!list.length){
+ if(!roles.length){
    let empty=document.createElement("div");
-   empty.textContent=mode==="add"?"Нет ролей":"Нет подтвержденных ролей";
+   empty.textContent="Нет ролей";
    menu.append(empty);
  }
- list.forEach(r=>{
-   let b=document.createElement("button");
-   b.textContent=r.name;
-   b.onclick=()=>mode==="add"?setConfirmedRole(person,r.id):removeConfirmedRole(person,r.id);
-   menu.append(b);
+ roles.forEach(r=>{
+   let l=document.createElement("label");
+   l.className="role-check";
+   let c=document.createElement("input");
+   c.type="checkbox";
+   c.checked=(person.confirmedRoles||[]).includes(r.id);
+   c.value=r.id;
+   c.onchange=()=>{
+     if(c.checked){
+       setConfirmedRole(person,r.id);
+       menu.querySelectorAll("input").forEach(input=>{input.checked=+input.value===r.id;});
+     }else if((person.confirmedRoles||[]).includes(r.id)){
+       removeConfirmedRole(person);
+     }
+   };
+   l.append(c," ",r.name);
+   menu.append(l);
  });
- let back=document.createElement("button");
- back.textContent="Назад";
- back.onclick=()=>render();
- menu.append(back);
  fitCardMenu(menu._card,menu);
 }
 function setupCardInteractions(card,menu,p){
