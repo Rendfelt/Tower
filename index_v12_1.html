@@ -191,11 +191,11 @@ function normalizeWorlds(){
  if(occupiedSecond)occupiedSecond.id=Math.max(2,...worlds.map(w=>w.id))+1;
  let deathWorld=worlds.find(w=>w.kind==="death-only")||worlds.find(w=>w.id===2);
  if(!deathWorld){
-   deathWorld={id:2,name:"Смерти",kind:"death-only",people:[]};
+   deathWorld={id:2,name:"Стата",kind:"death-only",people:[]};
    worlds.splice(1,0,deathWorld);
  }
  deathWorld.id=2;
- deathWorld.name="Смерти";
+ deathWorld.name="Стата";
  deathWorld.kind="death-only";
  syncDeathOnlyWorld();
  worlds.sort((a,b)=>a.id===1?-1:b.id===1?1:a.id===2?-1:b.id===2?1:a.id-b.id);
@@ -259,6 +259,12 @@ function roleHtml(person,id){
 }
 function personRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>")||"<i>нет ролей</i>";}
 function cardRolesHtml(person){return person.roles.map(id=>roleHtml(person,id)).join("<br>");}
+function playerStatsHtml(person){
+ const stats=playerStats(person);
+ return `Номинировал: ${stats.nominated}<br>Номинирован: ${stats.wasNominated}<br>Приватных разговоров: ${stats.conversations}<br>Голосовал: ${stats.voted}`;
+}
+function playerDetailsHtml(person){return isDeathOnlyWorld()?playerStatsHtml(person):personRolesHtml(person);}
+function cardDetailsHtml(person){return isDeathOnlyWorld()?playerStatsHtml(person):cardRolesHtml(person);}
 function cardIconHtml(person){
  const icons={heart:"❤",eye:"👁️",cross:"✕",smile:"🙂"};
  const html=(person.icons||[]).map(icon=>icons[icon]?`<span class="card-icon icon-${icon}">${icons[icon]}</span>`:"").join("");
@@ -267,13 +273,13 @@ function cardIconHtml(person){
 function cardHtml(person,votes){
  return cardIconHtml(person)+"<b>"+playerTitle(person)+(votes.includes(person.id)?" ✋":"")+"</b>"
    +(person.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"")
-   +cardRolesHtml(person);
+   +cardDetailsHtml(person);
 }
 function refreshRoleViews(){
  const votes=currentVotes();
  document.querySelectorAll(".person").forEach(box=>{
    const person=people.find(p=>p.id===+box.dataset.id);
-   if(person)box.innerHTML=`<b>${playerTitle(person)}</b><div>${personRolesHtml(person)}</div>`;
+   if(person)box.innerHTML=`<b>${playerTitle(person)}</b><div>${playerDetailsHtml(person)}</div>`;
  });
  document.querySelectorAll(".card").forEach(card=>{
    const person=people.find(p=>p.id===+card.dataset.id);
@@ -580,7 +586,7 @@ async function exportJson(){
 }
 function openImport(){imp.value="";imp.click();}
 imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();loadActiveWorld();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]},{id:2,name:"Смерти",kind:"death-only",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]},{id:2,name:"Стата",kind:"death-only",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -910,7 +916,7 @@ people.forEach(p=>{
  let box=document.createElement("div");box.className="person";
  if(p.dead)box.classList.add("dead");
  box.dataset.id=p.id;
- box.innerHTML=`<b>${playerTitle(p)}</b><div>${personRolesHtml(p)}</div>`;
+ box.innerHTML=`<b>${playerTitle(p)}</b><div>${playerDetailsHtml(p)}</div>`;
  let personRow=document.createElement("div");
  personRow.className="person-row";
  let menuBtn=document.createElement("button");
