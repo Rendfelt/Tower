@@ -375,7 +375,7 @@ function speechItemsForLog(log){
    const votes=(log.votes||[]).map(playerName);
    const items=[{text:`${source} номинирует ${target}`,pause:1100}];
    items.push({text:`За ${target} ${voteCountPhrase(votes.length)}`,pause:650});
-   votes.forEach(name=>items.push({text:name,pause:420}));
+   votes.forEach(name=>items.push({text:name,pause:650}));
    return items;
  }
  return [{text:logText(log),pause:1300}];
@@ -387,10 +387,14 @@ function prepareSpeechDay(day){
 function playSpeechLog(index,withIntro=false){
  if(!speechPlaybackDay){speakQueue([{text:"День еще не начался.",pause:0}]);return;}
  if(!speechPlaybackLogs.length){speakQueue([{text:`День ${speechPlaybackDay}. Событий пока нет.`,pause:0}]);return;}
+ const beforeStart=index<0;
+ const afterEnd=index>=speechPlaybackLogs.length;
  speechPlaybackIndex=Math.min(Math.max(0,index),speechPlaybackLogs.length-1);
  const items=[];
  if(withIntro)items.push({text:`История дня ${speechPlaybackDay}`,pause:1200});
- items.push(...speechItemsForLog(speechPlaybackLogs[speechPlaybackIndex]),{text:"",pause:900});
+ if(beforeStart)items.push({text:"Начало дня",pause:500});
+ if(afterEnd)items.push({text:"Конец дня",pause:500});
+ items.push(...speechItemsForLog(speechPlaybackLogs[speechPlaybackIndex]),{text:"",pause:600});
  speakQueue(items,()=>{
    if(speechPlaybackIndex<speechPlaybackLogs.length-1)playSpeechLog(speechPlaybackIndex+1);
  });
@@ -405,7 +409,8 @@ function speakSelectedDayHistory(){
 function shiftSpeechLog(delta){
  const day=+($("speechDaySelect")?.value||speechPlaybackDay||dayNumber||0);
  if(day!==speechPlaybackDay)prepareSpeechDay(day);
- playSpeechLog(speechPlaybackIndex+delta);
+ const nextIndex=speechPlaybackIndex+delta;
+ playSpeechLog(nextIndex);
 }
 function shiftSpeechDay(delta){
  const select=$("speechDaySelect");
