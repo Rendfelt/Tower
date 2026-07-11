@@ -955,22 +955,14 @@ function openConfirmedRoleEditor(person,menu){
    menu.append(empty);
  }
  roles.forEach(r=>{
-   let l=document.createElement("label");
-   l.className="role-check";
-   let c=document.createElement("input");
-   c.type="checkbox";
-   c.checked=(person.confirmedRoles||[]).includes(r.id);
-   c.value=r.id;
-   c.onchange=()=>{
-     if(c.checked){
-       setConfirmedRole(person,r.id);
-       menu.querySelectorAll("input").forEach(input=>{input.checked=+input.value===r.id;});
-     }else if((person.confirmedRoles||[]).includes(r.id)){
-       removeConfirmedRole(person);
-     }
+   let b=document.createElement("button");
+   b.className="role-check";
+   b.textContent=(person.confirmedRoles||[]).includes(r.id)?`✓ ${r.name}`:r.name;
+   b.onclick=()=>{
+     setConfirmedRole(person,r.id);
+     closeAllMenus();
    };
-   l.append(c," ",r.name);
-   menu.append(l);
+   menu.append(b);
  });
  fitCardMenu(menu._card,menu);
 }
