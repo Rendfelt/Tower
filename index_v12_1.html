@@ -61,7 +61,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .person b{display:block;margin-bottom:3px}
 .drop{display:none;position:absolute;left:8px;top:34px;background:#fff;border:1px solid #999;padding:8px;z-index:10}
 .drop label{display:block}
-.card{position:absolute;min-width:148px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:20px 11px 10px;touch-action:none;user-select:none;font-family:"Alegreya SC",Georgia,serif;font-size:18px;box-shadow:0 5px 14px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.25);color:#1d1713}
+.card{position:absolute;min-width:148px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:20px 11px 10px;touch-action:manipulation;user-select:none;font-family:"Alegreya SC",Georgia,serif;font-size:18px;box-shadow:0 5px 14px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.25);color:#1d1713}
 .card.color-blue{background:linear-gradient(180deg,#e2d4ff,#9b74c8);border-color:#6a3f96}
 .card.color-red{background:linear-gradient(180deg,#f2c6d0,#bb596a);border-color:#873040}
 .card.color-green{background:linear-gradient(180deg,#d5eccb,#78a765);border-color:#4c743b}
@@ -147,6 +147,12 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <script>
 const KEY="mafia-demo-state";
 let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+const activeTouchPointers=new Set();
+function cancelAllCardGestures(){
+ document.querySelectorAll(".card").forEach(card=>{
+   activeTouchPointers.forEach(id=>{if(card.hasPointerCapture(id))card.releasePointerCapture(id);});
+ });
+}
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -1007,6 +1013,11 @@ function setupCardInteractions(card,menu,p){
  const MOVE_LIMIT=8;
  const SWIPE_LIMIT=42;
  let dragging=false,moved=false,startX=0,startY=0,ox=0,oy=0;
+ const cancelCardGesture=pointerId=>{
+   if(card.hasPointerCapture(pointerId))card.releasePointerCapture(pointerId);
+   dragging=false;
+   moved=false;
+ };
  const setPosition=(x,y)=>{
    const maxX=Math.max(0,field.clientWidth-card.offsetWidth);
    const maxY=Math.max(0,field.clientHeight-card.offsetHeight);
@@ -1024,6 +1035,14 @@ function setupCardInteractions(card,menu,p){
  });
 
  card.addEventListener("pointerdown",e=>{
+   if(e.pointerType==="touch"){
+     activeTouchPointers.add(e.pointerId);
+     if(activeTouchPointers.size>1){
+       cancelAllCardGestures();
+       cancelCardGesture(e.pointerId);
+       return;
+     }
+   }
    if(e.button!==0 || e.target.closest(".menu"))return;
    if(anyCardMenuOpen())return;
    if(selectedLogIndex!=null){
@@ -1080,6 +1099,11 @@ function setupCardInteractions(card,menu,p){
  });
 
  card.addEventListener("pointermove",e=>{
+   if(e.pointerType==="touch"&&activeTouchPointers.size>1){
+     cancelAllCardGestures();
+     cancelCardGesture(e.pointerId);
+     return;
+   }
    if(!card.hasPointerCapture(e.pointerId))return;
    const dx=e.clientX-startX;
    const dy=e.clientY-startY;
@@ -1098,6 +1122,7 @@ function setupCardInteractions(card,menu,p){
  });
 
  const finish=e=>{
+   if(e.pointerType==="touch")activeTouchPointers.delete(e.pointerId);
    const hadCapture=card.hasPointerCapture(e.pointerId);
    if(!hadCapture)return;
    card.releasePointerCapture(e.pointerId);
