@@ -333,7 +333,7 @@ function logsForDay(day){
    return current===day;
  });
 }
-let speechQueue=[],speechQueueTimer=null,speechQueueDone=null,speechPlaybackDay=0,speechPlaybackLogs=[],speechPlaybackIndex=0;
+let speechQueue=[],speechQueueTimer=null,speechQueueDone=null,speechNext=null,speechPaused=false,speechPlaybackDay=0,speechPlaybackLogs=[],speechPlaybackIndex=0;
 function speakText(text,onend){
  if(!("speechSynthesis" in window)||!window.SpeechSynthesisUtterance)return;
  const utterance=new SpeechSynthesisUtterance(text);
@@ -346,13 +346,15 @@ function speakQueue(items,onDone){
  if(!("speechSynthesis" in window))return;
  window.speechSynthesis.cancel();
  if(speechQueueTimer)clearTimeout(speechQueueTimer);
+ speechPaused=false;
  speechQueueDone=onDone||null;
  speechQueue=items.slice();
  const next=()=>{
+   if(speechPaused){speechNext=next;return;}
    const item=speechQueue.shift();
    if(!item){const done=speechQueueDone;speechQueueDone=null;if(done)done();return;}
-   if(!item.text){speechQueueTimer=setTimeout(next,item.pause||900);return;}
-   speakText(item.text,()=>{speechQueueTimer=setTimeout(next,item.pause||900);});
+   if(!item.text){speechNext=next;speechQueueTimer=setTimeout(()=>{speechNext=null;next();},item.pause||900);return;}
+   speakText(item.text,()=>{speechNext=next;speechQueueTimer=setTimeout(()=>{speechNext=null;next();},item.pause||900);});
  };
  next();
 }
@@ -404,7 +406,7 @@ function speakDayHistory(day){
  playSpeechLog(0,true);
 }
 function speakSelectedDayHistory(){
- if("speechSynthesis" in window&&window.speechSynthesis.paused){window.speechSynthesis.resume();return;}
+ if(speechPaused){resumeSpeech();return;}
  speakDayHistory(+($("speechDaySelect")?.value||dayNumber||0));
 }
 function shiftSpeechLog(delta){
@@ -423,13 +425,24 @@ function shiftSpeechDay(delta){
 }
 function toggleSpeechPause(){
  if(!("speechSynthesis" in window))return;
- if(window.speechSynthesis.paused)window.speechSynthesis.resume();
- else if(window.speechSynthesis.speaking)window.speechSynthesis.pause();
+ if(speechPaused){resumeSpeech();return;}
+ speechPaused=true;
+ if(speechQueueTimer){clearTimeout(speechQueueTimer);speechQueueTimer=null;}
+ if(window.speechSynthesis.speaking)window.speechSynthesis.pause();
+}
+function resumeSpeech(){
+ speechPaused=false;
+ if("speechSynthesis" in window&&window.speechSynthesis.paused){window.speechSynthesis.resume();return;}
+ const next=speechNext;
+ speechNext=null;
+ if(next)next();
 }
 function stopSpeech(){
  speechQueue=[];
  if(speechQueueTimer)clearTimeout(speechQueueTimer);
  speechQueueDone=null;
+ speechNext=null;
+ speechPaused=false;
  if("speechSynthesis" in window)window.speechSynthesis.cancel();
 }
 function logDayAtIndex(index){
