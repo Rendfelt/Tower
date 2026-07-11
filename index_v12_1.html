@@ -185,6 +185,16 @@ function loadActiveWorld(){
  people=world?clonePeople(world.people):[];
  normalizePeople();
 }
+function syncDeathToOtherWorlds(sourcePerson){
+ if(!isMainWorld())return;
+ worlds.forEach(world=>{
+   if(world.id===currentWorldId || !Array.isArray(world.people))return;
+   const target=world.people.find(p=>p.id===sourcePerson.id);
+   if(!target)return;
+   target.dead=!!sourcePerson.dead;
+   target.deathReason=sourcePerson.deathReason||"";
+ });
+}
 function forEachRoleByType(callback){
  let hasPreviousType=false;
  ROLE_TYPES.forEach(type=>{
@@ -249,12 +259,14 @@ function refreshRoleViews(){
 function save(){syncActiveWorld();localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
+ if(!isMainWorld())return;
  logs.push({time:logTime(),text});
  if(logs.length>500)logs=logs.slice(-500);
  save();
  renderLog();
 }
 function addCustomLog(text,playerIds,roleIds){
+ if(!isMainWorld())return;
  logs.push({type:"custom",time:logTime(),text,playerIds,roleIds});
  if(logs.length>500)logs=logs.slice(-500);
  save();
@@ -269,12 +281,14 @@ function deathReasonText(log){
  return ({executed:"казнен",night:"умирает ночью",unclear:"умирает неясно"})[reason]||"умирает";
 }
 function addDeathLog(person,reason,abilityRole){
+ if(!isMainWorld())return;
  logs.push({type:"death",time:logTime(),playerId:person.id,dead:person.dead,reason:person.dead?reason||person.deathReason||"":"",abilityRoleId:abilityRole?.id||null,abilityRoleName:abilityRole?.name||""});
  if(logs.length>500)logs=logs.slice(-500);
  save();
  renderLog();
 }
 function addDayLog(){
+ if(!isMainWorld())return;
  dayNumber++;
  logs.push({type:"day",time:logTime(),day:dayNumber});
  if(logs.length>500)logs=logs.slice(-500);
@@ -282,6 +296,7 @@ function addDayLog(){
  renderLog();
 }
 function addNominationLog(sourceId,targetId){
+ if(!isMainWorld())return null;
  const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[]};
  logs.push(log);
  if(logs.length>500)logs=logs.slice(-500);
@@ -290,6 +305,7 @@ function addNominationLog(sourceId,targetId){
  return log;
 }
 function addConversationLog(sourceId,targetIds){
+ if(!isMainWorld())return;
  logs.push({type:"conversation",time:logTime(),sourceId,targetIds:[...targetIds]});
  if(logs.length>500)logs=logs.slice(-500);
  save();
@@ -493,6 +509,7 @@ function insertLogRole(){
  select.value="";
 }
 function addCustomLogEvent(){
+ if(!isMainWorld())return;
  const input=$("logTextInput");
  if(!input)return;
  const text=input.value.trim();
@@ -537,9 +554,10 @@ function nextPersonPosition(){
  const i=people.length;
  return {x:gap+(i%cols)*(cardW+gap),y:gap+Math.floor(i/cols)*(cardH+gap)};
 }
-function addPerson(){let n=pname.value.trim();if(!n)return;let pos=nextPersonPosition();people.push({id:pid++,name:n,roles:[],confirmedRoles:[],dead:false,color:"blue",x:pos.x,y:pos.y});pname.value="";save();render();}
-function addRole(){let n=rname.value.trim();if(!n)return;roles.push({id:rid++,name:n,type:ROLE_TYPES.includes(rtype.value)?rtype.value:"горожанин"});rname.value="";save();render();}
+function addPerson(){if(!isMainWorld())return;let n=pname.value.trim();if(!n)return;let pos=nextPersonPosition();people.push({id:pid++,name:n,roles:[],confirmedRoles:[],dead:false,color:"blue",x:pos.x,y:pos.y});pname.value="";save();render();}
+function addRole(){if(!isMainWorld())return;let n=rname.value.trim();if(!n)return;roles.push({id:rid++,name:n,type:ROLE_TYPES.includes(rtype.value)?rtype.value:"горожанин"});rname.value="";save();render();}
 function deleteRole(role){
+ if(!isMainWorld())return;
  if(!confirm(`Удалить роль "${role.name}"?`))return;
  roles=roles.filter(r=>r.id!==role.id);
  people.forEach(p=>{
@@ -556,6 +574,7 @@ function closePersonMenus(except){
  document.querySelectorAll(".person-menu").forEach(m=>{if(m!==except)m.style.display="none";});
 }
 function deletePerson(person){
+ if(!isMainWorld())return;
  if(!confirm(`Удалить игрока "${person.name}"?`))return;
  people=people.filter(p=>p.id!==person.id);
  if(nominationSourceId===person.id)nominationSourceId=null;
@@ -569,6 +588,7 @@ function playerTitle(person){return `${person.dead?"☠ ":""}${esc(person.name)}
 function toggleDead(person,reason,abilityRole){
  person.dead=!person.dead;
  person.deathReason=person.dead?reason||"unclear":"";
+ syncDeathToOtherWorlds(person);
  addDeathLog(person,reason,abilityRole);
  save();
  render();
@@ -692,6 +712,7 @@ function updateEventHint(){
  eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует: нажмите на карточку цели на поле <button onclick="cancelNomination()">Отмена</button>`;
 }
 function chooseNominationSource(person){
+ if(!isMainWorld())return;
  nominationPickSource=false;
  filterPickPlayer=false;
  nominationSourceId=person.id;
@@ -711,8 +732,10 @@ function cancelPlayerFilterPick(){
  render();
 }
 function finishNomination(target){
+ if(!isMainWorld())return;
  if(!nominationSourceId)return;
  const log=addNominationLog(nominationSourceId,target.id);
+ if(!log)return;
  votingTargetId=target.id;
  votingLogId=log.id;
  nominationPickSource=false;
@@ -725,6 +748,7 @@ function cancelVoting(){
  render();
 }
 function voteForNominee(voter){
+ if(!isMainWorld())return;
  if(!votingTargetId)return;
  const log=currentVotingLog();
  if(log){
@@ -740,6 +764,7 @@ function voteForNominee(voter){
 }
 
 function startConversation(person){
+ if(!isMainWorld())return;
  nominationPickSource=false;
  filterPickPlayer=false;
  conversationSourceId=person.id;
@@ -751,6 +776,7 @@ function startConversation(person){
  render();
 }
 function toggleConversationTarget(person){
+ if(!isMainWorld())return;
  if(!conversationSourceId || person.id===conversationSourceId)return;
  addConversationLog(conversationSourceId,[person.id]);
  conversationSourceId=null;
@@ -758,6 +784,7 @@ function toggleConversationTarget(person){
  render();
 }
 function finishConversation(){
+ if(!isMainWorld())return;
  if(conversationSourceId&&conversationTargetIds.length)addConversationLog(conversationSourceId,conversationTargetIds);
  conversationSourceId=null;
  conversationTargetIds=[];
