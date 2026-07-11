@@ -907,6 +907,10 @@ function updateEventHint(){
    eventHint.innerHTML=`Фильтр <button onclick="cancelPlayerFilterPick()">Отмена</button>`;
    return;
  }
+ if(isDeathOnlyWorld()&&statEventVisible){
+   eventHint.innerHTML=`Стата <button onclick="resetStatEventFilter()">Сбросить</button>`;
+   return;
+ }
  if(!nominationSourceId){eventHint.style.display="none";eventHint.innerHTML="";return;}
  eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует <button onclick="cancelNomination()">Отмена</button>`;
 }
@@ -1482,12 +1486,6 @@ document.addEventListener("pointerdown",e=>{
  if(!e.target.closest(".role-row"))closeRoleMenus();
  if(!e.target.closest(".person-row"))closePersonMenus();
 });
-field.addEventListener("pointerdown",e=>{
- if(!isDeathOnlyWorld()||!statEventVisible)return;
- e.preventDefault();
- e.stopPropagation();
- resetStatEventFilter();
-},true);
 document.querySelector(".system-panel")?.addEventListener("toggle",()=>{
  closeAllMenus();
  render();
