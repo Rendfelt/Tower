@@ -312,6 +312,7 @@ function cardHtml(person,votes){
 function separateStatCards(){
  if(!isDeathOnlyWorld())return;
  const gap=2;
+ const wallGap=10;
  const placed=[];
  const cards=[...field.querySelectorAll(".card")].map(card=>{
    const person=people.find(p=>p.id===+card.dataset.id);
@@ -325,6 +326,10 @@ function separateStatCards(){
    ];
    item.wall=distances.sort((a,b)=>a.value-b.value)[0].wall;
    item.axis=(item.wall==="left"||item.wall==="right")?"y":"x";
+   if(item.wall==="left")item.x=wallGap;
+   if(item.wall==="right")item.x=Math.max(0,field.clientWidth-item.w-wallGap);
+   if(item.wall==="top")item.y=wallGap;
+   if(item.wall==="bottom")item.y=Math.max(0,field.clientHeight-item.h-wallGap);
    return item;
  }).filter(Boolean).sort((a,b)=>a.y-b.y||a.x-b.x);
  const overlaps=(candidate)=>placed.some(item=>candidate.x<item.x+item.w+gap&&candidate.x+candidate.w+gap>item.x&&candidate.y<item.y+item.h+gap&&candidate.y+candidate.h+gap>item.y);
