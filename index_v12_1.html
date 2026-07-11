@@ -352,6 +352,7 @@ function showStatEventFilter(){
  statDayFilter=$("statDaySelect")?.value||"";
  statEventFilter=$("statEventSelect")?.value||"";
  statEventVisible=!!(statDayFilter&&statEventFilter);
+ if(statEventVisible)selectedLogIndex=null;
  const logDayFilter=$("logDayFilter");
  if(logDayFilter&&statDayFilter)logDayFilter.value=statDayFilter;
  render();
@@ -667,6 +668,7 @@ function ringShadow(colors){
 }
 function selectLogLine(index){
  selectedLogIndex=selectedLogIndex===index?null:index;
+ if(selectedLogIndex!=null)statEventVisible=false;
  render();
 }
 function renderFixedEventControls(){
