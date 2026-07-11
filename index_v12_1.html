@@ -352,6 +352,8 @@ function showStatEventFilter(){
  statDayFilter=$("statDaySelect")?.value||"";
  statEventFilter=$("statEventSelect")?.value||"";
  statEventVisible=!!(statDayFilter&&statEventFilter);
+ const logDayFilter=$("logDayFilter");
+ if(logDayFilter&&statDayFilter)logDayFilter.value=statDayFilter;
  render();
 }
 function resetStatEventFilter(){
