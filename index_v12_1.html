@@ -805,23 +805,23 @@ function updateEventHint(){
  if(!window.eventHint)return;
  eventHint.style.display="none";
  if(conversationSourceId){
-   eventHint.innerHTML=`${esc(playerName(conversationSourceId))} общается: нажмите на одну карточку собеседника <button onclick="cancelConversation()">Отмена</button>`;
+   eventHint.innerHTML=`${esc(playerName(conversationSourceId))} общается <button onclick="cancelConversation()">Отмена</button>`;
    return;
  }
  if(votingTargetId){
-   eventHint.innerHTML=`Голосование за ${esc(playerName(votingTargetId))}: нажмите на карточку голосующего <button onclick="cancelVoting()">Завершить</button>`;
+   eventHint.innerHTML=`Голосование за ${esc(playerName(votingTargetId))} <button onclick="cancelVoting()">Завершить</button>`;
    return;
  }
  if(nominationPickSource){
-   eventHint.innerHTML=`Номинация: нажмите на карточку игрока, который номинирует <button onclick="cancelNomination()">Отмена</button>`;
+   eventHint.innerHTML=`Номинация <button onclick="cancelNomination()">Отмена</button>`;
    return;
  }
  if(filterPickPlayer){
-   eventHint.innerHTML=`Фильтр: нажмите на карточку игрока <button onclick="cancelPlayerFilterPick()">Отмена</button>`;
+   eventHint.innerHTML=`Фильтр <button onclick="cancelPlayerFilterPick()">Отмена</button>`;
    return;
  }
  if(!nominationSourceId){eventHint.style.display="none";eventHint.innerHTML="";return;}
- eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует: нажмите на карточку цели на поле <button onclick="cancelNomination()">Отмена</button>`;
+ eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует <button onclick="cancelNomination()">Отмена</button>`;
 }
 function chooseNominationSource(person){
  if(!isMainWorld())return;
