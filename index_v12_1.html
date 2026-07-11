@@ -331,21 +331,59 @@ function logsForDay(day){
    return current===day;
  });
 }
-function speakText(text){
+let speechQueue=[],speechQueueTimer=null;
+function speakText(text,onend){
  if(!("speechSynthesis" in window)||!window.SpeechSynthesisUtterance)return;
- window.speechSynthesis.cancel();
  const utterance=new SpeechSynthesisUtterance(text);
  utterance.lang="ru-RU";
- utterance.rate=.92;
+ utterance.rate=.61;
+ utterance.onend=()=>{if(onend)onend();};
  window.speechSynthesis.speak(utterance);
 }
+function speakQueue(items){
+ if(!("speechSynthesis" in window))return;
+ window.speechSynthesis.cancel();
+ if(speechQueueTimer)clearTimeout(speechQueueTimer);
+ speechQueue=items.slice();
+ const next=()=>{
+   const item=speechQueue.shift();
+   if(!item)return;
+   if(!item.text){speechQueueTimer=setTimeout(next,item.pause||900);return;}
+   speakText(item.text,()=>{speechQueueTimer=setTimeout(next,item.pause||900);});
+ };
+ next();
+}
+function numberWord(n){
+ return ({0:"ноль",1:"один",2:"два",3:"три",4:"четыре",5:"пять",6:"шесть",7:"семь",8:"восемь",9:"девять",10:"десять",11:"одиннадцать",12:"двенадцать",13:"тринадцать",14:"четырнадцать",15:"пятнадцать",16:"шестнадцать",17:"семнадцать",18:"восемнадцать",19:"девятнадцать",20:"двадцать"})[n]||String(n);
+}
+function peopleWord(n){
+ const mod10=n%10,mod100=n%100;
+ if(mod10===1&&mod100!==11)return "человек";
+ return "человек";
+}
+function voteCountPhrase(n){return `${n===1?"голосует":"голосуют"} ${numberWord(n)} ${peopleWord(n)}`;}
+function speechItemsForLog(log){
+ if(log.type==="conversation")return [{text:`${playerName(log.sourceId)} общается с ${(log.targetIds||[]).map(playerName).join(", ")}`,pause:1300}];
+ if(log.type==="death")return [{text:`${playerName(log.playerId)} ${log.dead?deathReasonText(log):"оживает"}`,pause:1300}];
+ if(log.type==="custom")return [{text:log.text||"",pause:1300}];
+ if(log.type==="nomination"){
+   const source=playerName(log.sourceId);
+   const target=playerName(log.targetId);
+   const votes=(log.votes||[]).map(playerName);
+   const items=[{text:`${source} номинирует ${target}`,pause:1100}];
+   items.push({text:`За ${target} ${voteCountPhrase(votes.length)}`,pause:650});
+   votes.forEach(name=>items.push({text:name,pause:420}));
+   return items;
+ }
+ return [{text:logText(log),pause:1300}];
+}
 function speakDayHistory(day){
- if(!day){speakText("День еще не начался.");return;}
- const dayLogs=logsForDay(day).map(logText).filter(Boolean);
- const text=dayLogs.length
-   ?[`История дня ${day}.`,...dayLogs].join(". ")
-   :`День ${day}. Событий пока нет.`;
- speakText(text);
+ if(!day){speakQueue([{text:"День еще не начался.",pause:0}]);return;}
+ const dayLogs=logsForDay(day);
+ if(!dayLogs.length){speakQueue([{text:`День ${day}. Событий пока нет.`,pause:0}]);return;}
+ const items=[{text:`История дня ${day}`,pause:1200}];
+ dayLogs.forEach(log=>items.push(...speechItemsForLog(log),{text:"",pause:900}));
+ speakQueue(items.filter(item=>item.text||item.pause));
 }
 function speakSelectedDayHistory(){
  speakDayHistory(+($("speechDaySelect")?.value||dayNumber||0));
@@ -356,6 +394,8 @@ function toggleSpeechPause(){
  else if(window.speechSynthesis.speaking)window.speechSynthesis.pause();
 }
 function stopSpeech(){
+ speechQueue=[];
+ if(speechQueueTimer)clearTimeout(speechQueueTimer);
  if("speechSynthesis" in window)window.speechSynthesis.cancel();
 }
 function logDayAtIndex(index){
