@@ -129,7 +129,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 
 <div class=top-area><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt="">
 <p><input id=pname placeholder="Имя"><button onclick="addPerson()">Добавить игрока</button></p>
-<p><input id=rname placeholder="Роль"><button onclick="addRole()">Добавить роль</button></p>
+<p><input id=rname placeholder="Роль"><select id=rtype><option value="горожанин">горожанин</option><option value="изгой">изгой</option><option value="приспешник">приспешник</option><option value="демон">демон</option></select><button onclick="addRole()">Добавить роль</button></p>
 <div class=lock-toggle-row><label class=switch><input id=fieldLockToggle type=checkbox onchange="setFieldLocked(this.checked)"><span class=switch-track></span><span class=switch-label>Зафиксировать поле</span></label></div>
 <p><button onclick="exportJson()">Экспорт</button>
 <button onclick="openImport()">Импорт</button>
@@ -146,6 +146,8 @@ const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+const ROLE_TYPES=["горожанин","изгой","приспешник","демон"];
+function normalizeRoles(){roles.forEach(r=>{r.type=ROLE_TYPES.includes(r.type)?r.type:"горожанин";});}
 function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.icons=Array.isArray(p.icons)?p.icons:(p.icon?[p.icon]:[]);p.icons=p.icons.filter(icon=>["heart","eye","cross","smile"].includes(icon));delete p.icon;p.deathReason=p.dead?p.deathReason||"":"";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id)).slice(0,1);});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
@@ -453,7 +455,7 @@ function addCustomLogEvent(){
  input.value="";
  input._meta={playerIds:[],roleIds:[]};
 }
-(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;fieldLocked=!!d.fieldLocked}catch{}}normalizePeople();})();
+(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;fieldLocked=!!d.fieldLocked}catch{}}normalizeRoles();normalizePeople();})();
 async function exportJson(){
  const data=JSON.stringify({people,roles,logs,pid,rid,dayNumber,fieldLocked},null,2);
  const blob=new Blob([data],{type:"application/json"});
@@ -478,7 +480,7 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizePeople();save();imp.value="";render();};r.readAsText(f);};
 function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
@@ -488,7 +490,7 @@ function nextPersonPosition(){
  return {x:gap+(i%cols)*(cardW+gap),y:gap+Math.floor(i/cols)*(cardH+gap)};
 }
 function addPerson(){let n=pname.value.trim();if(!n)return;let pos=nextPersonPosition();people.push({id:pid++,name:n,roles:[],confirmedRoles:[],dead:false,color:"blue",x:pos.x,y:pos.y});pname.value="";save();render();}
-function addRole(){let n=rname.value.trim();if(!n)return;roles.push({id:rid++,name:n});rname.value="";save();render();}
+function addRole(){let n=rname.value.trim();if(!n)return;roles.push({id:rid++,name:n,type:ROLE_TYPES.includes(rtype.value)?rtype.value:"горожанин"});rname.value="";save();render();}
 function deleteRole(role){
  if(!confirm(`Удалить роль "${role.name}"?`))return;
  roles=roles.filter(r=>r.id!==role.id);
