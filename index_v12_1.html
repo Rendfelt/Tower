@@ -985,6 +985,7 @@ function openConfirmedRoleEditor(person,menu){
 }
 function setupCardInteractions(card,menu,p){
  const MOVE_LIMIT=8;
+ const SWIPE_UP_LIMIT=42;
  let dragging=false,moved=false,startX=0,startY=0,ox=0,oy=0;
  const setPosition=(x,y)=>{
    const maxX=Math.max(0,field.clientWidth-card.offsetWidth);
@@ -1040,7 +1041,10 @@ function setupCardInteractions(card,menu,p){
      e.preventDefault();
      e.stopPropagation();
      closeAllMenus();
-     openCardMenu(card,menu);
+     startX=e.clientX;
+     startY=e.clientY;
+     moved=false;
+     card.setPointerCapture(e.pointerId);
      return;
    }
    e.preventDefault();
@@ -1056,10 +1060,14 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("pointermove",e=>{
    if(!card.hasPointerCapture(e.pointerId))return;
-   if(menu.style.display==="block")return;
    const dx=e.clientX-startX;
    const dy=e.clientY-startY;
    const dist=Math.hypot(dx,dy);
+   if(fieldLocked){
+     if(dist>MOVE_LIMIT)moved=true;
+     return;
+   }
+   if(menu.style.display==="block")return;
    if(!dragging && dist>MOVE_LIMIT){
      dragging=true;
      moved=true;
@@ -1070,6 +1078,19 @@ function setupCardInteractions(card,menu,p){
 
  const finish=e=>{
    if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
+   if(fieldLocked){
+     const dx=e.clientX-startX;
+     const dy=e.clientY-startY;
+     if(dy<-SWIPE_UP_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4){
+       openCardMenu(card,menu);
+       openRoleEditor(p,menu);
+     }else if(!moved){
+       openCardMenu(card,menu);
+     }
+     moved=false;
+     dragging=false;
+     return;
+   }
    if(dragging)save();
    dragging=false;
  };
