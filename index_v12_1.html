@@ -166,11 +166,24 @@ const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).leng
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 const ROLE_TYPES=["горожанин","изгой","приспешник","демон"];
 function normalizeRoles(){roles.forEach(r=>{r.type=ROLE_TYPES.includes(r.type)?r.type:"горожанин";});}
+function clonePeople(list=people){return JSON.parse(JSON.stringify(list));}
+function currentWorld(){return worlds.find(w=>w.id===currentWorldId)||worlds[0];}
+function isMainWorld(){return currentWorldId===1;}
+function effectiveFieldLocked(){return fieldLocked||!isMainWorld();}
 function normalizeWorlds(){
  worlds=Array.isArray(worlds)?worlds:[];
- if(!worlds.length)worlds=[{id:1,name:"Основной"}];
- worlds=worlds.map((w,i)=>({id:Number.isFinite(w.id)?w.id:i+1,name:w.name||`Мир ${i+1}`}));
+ if(!worlds.length)worlds=[{id:1,name:"Основной",people:clonePeople(people)}];
+ worlds=worlds.map((w,i)=>({id:Number.isFinite(w.id)?w.id:i+1,name:w.name||`Мир ${i+1}`,people:Array.isArray(w.people)?w.people:clonePeople(people)}));
  if(!worlds.some(w=>w.id===currentWorldId))currentWorldId=worlds[0].id;
+}
+function syncActiveWorld(){
+ const world=currentWorld();
+ if(world)world.people=clonePeople(people);
+}
+function loadActiveWorld(){
+ const world=currentWorld();
+ people=world?clonePeople(world.people):[];
+ normalizePeople();
 }
 function forEachRoleByType(callback){
  let hasPreviousType=false;
@@ -233,7 +246,7 @@ function refreshRoleViews(){
  });
  renderLog();
 }
-function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked}));}
+function save(){syncActiveWorld();localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
  logs.push({time:logTime(),text});
@@ -489,8 +502,9 @@ function addCustomLogEvent(){
  input.value="";
  input._meta={playerIds:[],roleIds:[]};
 }
-(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked}catch{}}normalizeRoles();normalizeWorlds();normalizePeople();})();
+(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked}catch{}}normalizeRoles();normalizeWorlds();loadActiveWorld();})();
 async function exportJson(){
+ syncActiveWorld();
  const data=JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked},null,2);
  const blob=new Blob([data],{type:"application/json"});
  if(window.showSaveFilePicker){
@@ -514,8 +528,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной"}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();loadActiveWorld();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -755,19 +769,31 @@ function cancelConversation(){
  render();
 }
 function selectWorld(id){
+ syncActiveWorld();
  currentWorldId=id;
+ loadActiveWorld();
+ nominationPickSource=false;
+ filterPickPlayer=false;
+ nominationSourceId=null;
+ votingTargetId=null;
+ votingLogId=null;
+ conversationSourceId=null;
+ conversationTargetIds=[];
  closeAllMenus();
  save();
  render();
 }
 function addWorld(){
+ syncActiveWorld();
  const nextId=Math.max(0,...worlds.map(w=>w.id))+1;
- worlds.push({id:nextId,name:`Мир ${worlds.length+1}`});
+ worlds.push({id:nextId,name:`Мир ${worlds.length+1}`,people:clonePeople(people)});
  currentWorldId=nextId;
+ loadActiveWorld();
  save();
  render();
 }
 function setFieldLocked(locked){
+ if(!isMainWorld())return;
  fieldLocked=!!locked;
  closeAllMenus();
  save();
@@ -778,7 +804,7 @@ function render(){
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 renderWorldTabs();
 const fieldLockToggle=$("fieldLockToggle");
-if(fieldLockToggle)fieldLockToggle.checked=fieldLocked;
+if(fieldLockToggle){fieldLockToggle.checked=effectiveFieldLocked();fieldLockToggle.disabled=!isMainWorld();}
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
 let dayBadge=document.createElement("div");
@@ -893,22 +919,29 @@ function renderWorldTabs(){
 function fillCardMenu(person,menu){
  menu.innerHTML="";
  menu.classList.remove("role-choice-menu");
- let filterBtn=document.createElement("button");
- filterBtn.textContent="Фильтровать";
- filterBtn.onclick=()=>filterLogByPlayer(person);
- let deadBtn=document.createElement("button");
- deadBtn.textContent=person.dead?"Сделать живым":"Сделать мертвым";
- deadBtn.onclick=()=>person.dead?toggleDead(person):openDeathEditor(person,menu);
  let colorBtn=document.createElement("button");
  colorBtn.textContent="Цвет плашки";
  colorBtn.onclick=()=>openColorEditor(person,menu);
  let iconBtn=document.createElement("button");
  iconBtn.textContent="Иконка";
  iconBtn.onclick=()=>openIconEditor(person,menu);
+ let confirmBtn=document.createElement("button");
+ confirmBtn.textContent="Проверенная роль";
+ confirmBtn.onclick=()=>openConfirmedRoleEditor(person,menu);
  let unconfirmBtn=document.createElement("button");
  unconfirmBtn.textContent="Снять проверенную роль";
  unconfirmBtn.onclick=()=>{removeConfirmedRole(person);closeAllMenus();};
- menu.append(filterBtn,deadBtn,colorBtn,iconBtn,unconfirmBtn);
+ if(isMainWorld()){
+   let filterBtn=document.createElement("button");
+   filterBtn.textContent="Фильтровать";
+   filterBtn.onclick=()=>filterLogByPlayer(person);
+   let deadBtn=document.createElement("button");
+   deadBtn.textContent=person.dead?"Сделать живым":"Сделать мертвым";
+   deadBtn.onclick=()=>person.dead?toggleDead(person):openDeathEditor(person,menu);
+   menu.append(filterBtn,deadBtn,colorBtn,iconBtn,unconfirmBtn);
+ }else{
+   menu.append(confirmBtn,unconfirmBtn,colorBtn,iconBtn);
+ }
 }
 
 function setPlayerColor(person,color){
@@ -1079,7 +1112,7 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("contextmenu",e=>{
    e.preventDefault();
-   if(!fieldLocked)return;
+   if(!effectiveFieldLocked())return;
    e.stopPropagation();
    openCardMenu(card,menu);
  });
@@ -1127,7 +1160,7 @@ function setupCardInteractions(card,menu,p){
      toggleConversationTarget(p);
      return;
    }
-   if(fieldLocked){
+ if(effectiveFieldLocked()){
      e.preventDefault();
      e.stopPropagation();
      closeAllMenus();
@@ -1158,7 +1191,7 @@ function setupCardInteractions(card,menu,p){
    const dx=e.clientX-startX;
    const dy=e.clientY-startY;
    const dist=Math.hypot(dx,dy);
-   if(fieldLocked){
+   if(effectiveFieldLocked()){
      if(dist>MOVE_LIMIT)moved=true;
      return;
    }
@@ -1176,10 +1209,12 @@ function setupCardInteractions(card,menu,p){
    const hadCapture=card.hasPointerCapture(e.pointerId);
    if(!hadCapture)return;
    card.releasePointerCapture(e.pointerId);
-   if(fieldLocked){
+  if(effectiveFieldLocked()){
      const dx=e.clientX-startX;
      const dy=e.clientY-startY;
-     if(dy<-SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4){
+     if(!isMainWorld()){
+       if(!moved)openCardMenu(card,menu);
+     }else if(dy<-SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4){
        openCardMenu(card,menu);
        openRoleEditor(p,menu);
      }else if(dy>SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4){
