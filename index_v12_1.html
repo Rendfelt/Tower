@@ -998,6 +998,7 @@ function setupCardInteractions(card,menu,p){
  card.addEventListener("contextmenu",e=>{
    e.preventDefault();
    if(!fieldLocked)return;
+   e.stopPropagation();
    openCardMenu(card,menu);
  });
 
@@ -1037,6 +1038,7 @@ function setupCardInteractions(card,menu,p){
    }
    if(fieldLocked){
      e.preventDefault();
+     e.stopPropagation();
      closeAllMenus();
      openCardMenu(card,menu);
      return;
