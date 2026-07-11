@@ -563,12 +563,10 @@ function fitCardMenu(card,menu){
    const cardBox=card.getBoundingClientRect();
    const menuWidth=menu.offsetWidth;
    const menuHeight=menu.offsetHeight;
-   const minLeft=8-cardBox.left;
-   const maxLeft=window.innerWidth-cardBox.left-menuWidth-8;
-   let left=Math.min(Math.max(0,minLeft),maxLeft);
-   let top=card.offsetHeight+4;
-   if(cardBox.top+top+menuHeight>window.innerHeight-8)top=-(menuHeight+4);
-   if(cardBox.top+top<8)top=8-cardBox.top;
+   const centerLeft=(window.innerWidth-menuWidth)/2;
+   const centerTop=(window.innerHeight-menuHeight)/2;
+   let left=Math.max(8,centerLeft)-cardBox.left;
+   let top=Math.max(8,centerTop)-cardBox.top;
    menu.style.left=left+"px";
    menu.style.top=top+"px";
  });
