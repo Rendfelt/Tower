@@ -75,9 +75,7 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
 .event-hint{width:1000px;box-sizing:border-box;margin:8px 20px 10px;padding:10px 12px;border:1px solid var(--gold);border-radius:8px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;display:none;box-shadow:0 5px 14px rgba(0,0,0,.32)}
-.field-nominate-btn,.field-filter-btn{position:absolute;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
-.field-nominate-btn{left:12px}
-.field-filter-btn{left:190px}
+.field-filter-btn{position:absolute;left:12px;top:12px;z-index:60;min-height:44px;padding:8px 12px;font-size:20px;box-shadow:0 6px 14px rgba(0,0,0,.42)}
 .lock-toggle-row{margin:-2px 0 10px;display:flex;align-items:center;gap:10px;color:var(--ink)}
 .switch{position:relative;display:inline-flex;align-items:center;gap:10px;min-height:38px;cursor:pointer}
 .switch input{position:absolute;opacity:0;width:1px;height:1px}
@@ -542,6 +540,9 @@ function toggleDead(person,reason,abilityRole){
 function closeAllMenus(except){
  document.querySelectorAll(".menu").forEach(m=>{if(m!==except)m.style.display="none";});
 }
+function anyCardMenuOpen(){
+ return [...document.querySelectorAll(".menu")].some(m=>m.style.display==="block");
+}
 function openCardMenu(card,menu){
  closeAllMenus(menu);
  menu._card=card;
@@ -555,9 +556,9 @@ function openCardMenu(card,menu){
 function fitCardMenu(card,menu){
  if(!card||!menu||menu.style.display==="none")return;
  menu.style.maxHeight=Math.max(120,field.clientHeight-8)+"px";
- menu.style.width=menu.classList.contains("role-choice-menu")?"max-content":Math.min(420,field.clientWidth-8)+"px";
+ menu.style.width="max-content";
  menu.style.maxWidth=(field.clientWidth-8)+"px";
- menu.style.overflowX=menu.classList.contains("role-choice-menu")?"auto":"hidden";
+ menu.style.overflowX="auto";
  menu.style.overflowY="auto";
  requestAnimationFrame(()=>{
    const fieldBox=field.getBoundingClientRect();
@@ -656,17 +657,6 @@ function updateEventHint(){
  eventHint.style.display="block";
  eventHint.innerHTML=`${esc(playerName(nominationSourceId))} номинирует: нажмите на карточку цели на поле <button onclick="cancelNomination()">Отмена</button>`;
 }
-function startNominationFromField(){
- nominationPickSource=true;
- filterPickPlayer=false;
- nominationSourceId=null;
- votingTargetId=null;
- votingLogId=null;
- conversationSourceId=null;
- conversationTargetIds=[];
- closeAllMenus();
- render();
-}
 function chooseNominationSource(person){
  nominationPickSource=false;
  nominationSourceId=person.id;
@@ -752,11 +742,6 @@ const fieldLockToggle=$("fieldLockToggle");
 if(fieldLockToggle)fieldLockToggle.checked=fieldLocked;
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
-let nominateFieldBtn=document.createElement("button");
-nominateFieldBtn.className="field-nominate-btn";
-nominateFieldBtn.textContent="Номинировать";
-nominateFieldBtn.onclick=e=>{e.stopPropagation();startNominationFromField();};
-field.append(nominateFieldBtn);
 let filterFieldBtn=document.createElement("button");
 filterFieldBtn.className="field-filter-btn";
 filterFieldBtn.textContent="Фильтр";
@@ -1045,7 +1030,7 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("pointerdown",e=>{
    if(e.button!==0 || e.target.closest(".menu"))return;
-   if(menu.style.display==="block")return;
+   if(anyCardMenuOpen())return;
    if(selectedLogIndex!=null){
      e.preventDefault();
      selectedLogIndex=null;
@@ -1127,6 +1112,8 @@ function setupCardInteractions(card,menu,p){
        openRoleEditor(p,menu);
      }else if(dy>SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4){
        startConversation(p);
+     }else if(dx<-SWIPE_LIMIT && Math.abs(dx)>Math.abs(dy)*1.4){
+       chooseNominationSource(p);
      }else if(!moved){
        openCardMenu(card,menu);
      }
