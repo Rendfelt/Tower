@@ -57,7 +57,8 @@ body.votes-world .vote-world-controls{display:flex}
 .vote-world-controls .switch{font-size:22px;color:#fff8ee}
 .logbox{height:270px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(38,17,62,.98),rgba(15,8,28,.98));color:var(--ink);padding:10px 12px;font-size:20px;box-shadow:inset 0 0 24px rgba(0,0,0,.35)}
 .vote-link-list{display:flex;flex-direction:column;gap:8px}
-.vote-link-item{padding:8px 10px;border-bottom:1px solid rgba(216,200,239,.18)}
+.vote-link-item{padding:8px 10px;border-bottom:1px solid rgba(216,200,239,.18);cursor:pointer;border-radius:6px}
+.vote-link-item:hover{background:rgba(216,177,92,.12)}
 .vote-link-item b{color:#f4d36f}
 .vote-link-peers{margin-top:4px;color:#f6edf9}
 .logitem{padding:6px 8px;border-bottom:1px solid rgba(216,200,239,.18);border-radius:6px;cursor:pointer}
@@ -183,7 +184,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
-<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div id=voteWorldControls class=vote-world-controls><label class=switch><input id=voteTogetherToggle type=checkbox onchange="setVoteTogetherMode(this.checked)"><span></span>Вместе</label></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details><div id=speechSurface class=speech-surface>Свайп: предыдущий / следующий лог<br>Долгое нажатие: предыдущий / следующий день</div><div class=speech-controls><div class=speech-buttons><button onclick="speakSelectedSpeech()">▶</button><button onclick="stopSpeech()">■</button></div><div class=speech-selects><select id=speechModeSelect></select><select id=speechDaySelect onchange="selectSpeechDay()"></select><select id=speechPlayerSelect onchange="selectSpeechPlayer()"></select></div></div>
+<div id=eventHint class=event-hint></div><div id=voteWorldControls class=vote-world-controls><label class=switch><input id=voteTogetherToggle type=checkbox onchange="setVoteTogetherMode(this.checked)"><span></span>Вместе</label></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details><div id=speechSurface class=speech-surface>Свайп: предыдущий / следующий лог<br>Долгое нажатие: предыдущий / следующий день</div><div class=speech-controls><div class=speech-buttons><button onclick="speakSelectedSpeech()">▶</button><button onclick="stopSpeech()">■</button></div><div class=speech-selects><select id=speechModeSelect></select><select id=speechDaySelect onchange="selectSpeechDay()"></select><select id=speechPlayerSelect onchange="selectSpeechPlayer()"></select></div></div>
 
 <script>
 const KEY="mafia-demo-state";
@@ -489,6 +490,12 @@ function addVoteFilter(person){
 function removeVoteFilter(person){
  if(!isVotesWorld())return;
  voteFilterIds=voteFilterIds.filter(id=>id!==person.id);
+ save();
+ render();
+}
+function setSingleVoteFilter(id){
+ if(!isVotesWorld())return;
+ voteFilterIds=[id];
  save();
  render();
 }
@@ -1085,7 +1092,7 @@ function renderVoteLinkList(){
  const sortedPeople=people.slice().sort((a,b)=>voteBestPeerCount(b.id,matrix)-voteBestPeerCount(a.id,matrix)||a.name.localeCompare(b.name,"ru"));
  list.innerHTML=`<div class="vote-link-list">${sortedPeople.map(p=>{
    const peers=voteTopPeers(p.id,matrix).map(item=>`${esc(item.person.name)} (${item.count})`).join(", ");
-   return `<div class="vote-link-item"><b>${playerTitle(p)}</b><div class="vote-link-peers">${peers||"Совпадений нет"}</div></div>`;
+   return `<div class="vote-link-item" onclick="setSingleVoteFilter(${p.id})"><b>${playerTitle(p)}</b><div class="vote-link-peers">${peers||"Совпадений нет"}</div></div>`;
  }).join("")}</div>`;
 }
 function renderLog(){
