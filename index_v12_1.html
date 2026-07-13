@@ -351,12 +351,13 @@ function playerStatsHtml(person){
 function playerDetailsHtml(person){return isDeathOnlyWorld()?playerStatsHtml(person):personRolesHtml(person);}
 function cardDetailsHtml(person){return isDeathOnlyWorld()?playerStatsHtml(person):cardRolesHtml(person);}
 function cardIconHtml(person){
+ if(isVotesWorld())return "";
  const icons={heart:"❤",eye:"👁️",cross:"✕",smile:"🙂"};
  const html=(person.icons||[]).map(icon=>icons[icon]?`<span class="card-icon icon-${icon}">${icons[icon]}</span>`:"").join("");
  return html?`<span class="card-icons">${html}</span>`:"";
 }
 function cardHtml(person,votes){
- const showHand=person.dead?!person.deadVoteUsed&&!votes.includes(person.id):votes.includes(person.id);
+ const showHand=!isVotesWorld()&&(person.dead?!person.deadVoteUsed&&!votes.includes(person.id):votes.includes(person.id));
  return cardIconHtml(person)+"<b>"+playerTitle(person)+(showHand?" ✋":"")+"</b>"
    +(person.id===votingTargetId?`<div class="vote-count">Голосов: ${votes.length}</div>`:"")
    +cardDetailsHtml(person);
@@ -1658,7 +1659,7 @@ people.forEach(p=>{
  let card=document.createElement("div");
  card.className="card";
  card.dataset.id=p.id;
- card.classList.add("color-"+(p.color||"blue"));
+ if(!isVotesWorld())card.classList.add("color-"+(p.color||"blue"));
  if(p.dead&&!isVotesWorld())card.classList.add("dead");
  if(p.id===conversationSourceId)card.classList.add("conversation-source");
  else if(conversationSourceId)card.classList.add("conversation-target");
