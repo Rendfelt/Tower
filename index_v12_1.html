@@ -169,11 +169,11 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <input id="imp" type=file accept=".json" hidden></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
-<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details><div id=speechSurface class=speech-surface>Свайп: предыдущий / следующий лог<br>Долгое нажатие: предыдущий / следующий день</div><div class=speech-controls><button onclick="speakSelectedSpeech()">▶</button><button onclick="stopSpeech()">■</button><select id=speechDaySelect onchange="selectSpeechDay()"></select><select id=speechPlayerSelect onchange="selectSpeechPlayer()"></select></div>
+<div id=eventHint class=event-hint></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details><div id=speechSurface class=speech-surface>Свайп: предыдущий / следующий лог<br>Долгое нажатие: предыдущий / следующий день</div><div class=speech-controls><button onclick="speakSelectedSpeech()">▶</button><button onclick="stopSpeech()">■</button><select id=speechModeSelect></select><select id=speechDaySelect onchange="selectSpeechDay()"></select><select id=speechPlayerSelect onchange="selectSpeechPlayer()"></select></div>
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="",statEventVisible=false;
+let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="",statEventVisible=false,playerPanelMode="stats";
 const activeTouchPointers=new Set();
 function cancelAllCardGestures(){
  document.querySelectorAll(".card").forEach(card=>{
@@ -335,6 +335,69 @@ function logsForDay(day){
    return current===day;
  });
 }
+function dayBuckets(){
+ const buckets=new Map();
+ let current=0;
+ logs.forEach(log=>{
+   if(log.type==="day"){current=Number.isFinite(log.day)?log.day:current+1;return;}
+   if(!buckets.has(current))buckets.set(current,[]);
+   buckets.get(current).push(log);
+ });
+ return buckets;
+}
+function uniqueNames(ids){
+ return [...new Set(ids.filter(id=>id!=null))].map(playerName).filter(name=>name&&name!=="?");
+}
+function daySummaryLines(day){
+ const dayLogs=logsForDay(day);
+ const nominated=[],nominators=[],voters=[],dead=[],talkers=[];
+ dayLogs.forEach(log=>{
+   if(log.type==="nomination"){
+     nominators.push(log.sourceId);
+     nominated.push(log.targetId);
+     (log.votes||[]).forEach(id=>voters.push(id));
+   }
+   if(log.type==="death"&&log.dead)dead.push(log.playerId);
+   if(log.type==="conversation")talkers.push(log.sourceId,...(log.targetIds||[]));
+ });
+ const nonVoters=people.filter(p=>!voters.includes(p.id)).map(p=>p.name);
+ return [
+   `День ${day}`,
+   `Номинировали: ${uniqueNames(nominators).join(", ")||"никто"}`,
+   `Номинированы: ${uniqueNames(nominated).join(", ")||"никто"}`,
+   `Голосовали: ${uniqueNames(voters).join(", ")||"никто"}`,
+   `Не голосовали: ${nonVoters.join(", ")||"никто"}`,
+   `Умерли: ${uniqueNames(dead).join(", ")||"никто"}`,
+   `Разговоры: ${uniqueNames(talkers).join(", ")||"нет"}`
+ ];
+}
+function playerTimelineLines(playerId){
+ const person=people.find(p=>p.id===playerId);
+ if(!person)return [];
+ const lines=[`Лента игрока ${person.name}`];
+ dayBuckets().forEach((dayLogs,day)=>{
+   const parts=[];
+   dayLogs.forEach(log=>{
+     if(log.type==="nomination"){
+       if(log.sourceId===playerId)parts.push(`номинировал ${playerName(log.targetId)}`);
+       if(log.targetId===playerId)parts.push(`был номинирован ${playerName(log.sourceId)}`);
+       if((log.votes||[]).includes(playerId))parts.push(`голосовал за ${playerName(log.targetId)}`);
+     }
+     if(log.type==="conversation"){
+       if(log.sourceId===playerId)parts.push(`общался с ${(log.targetIds||[]).map(playerName).join(", ")}`);
+       else if((log.targetIds||[]).includes(playerId))parts.push(`общался с ${playerName(log.sourceId)}`);
+     }
+     if(log.type==="death"&&log.playerId===playerId)parts.push(log.dead?deathReasonText(log):"ожил");
+     if(log.type==="dead-vote"&&log.playerId===playerId)parts.push(`использовал мертвый голос за ${playerName(log.targetId)}`);
+   });
+   if(parts.length)lines.push(`День ${day}: ${parts.join("; ")}`);
+ });
+ if(lines.length===1)lines.push("Событий нет");
+ return lines;
+}
+function speechItemsFromLines(lines){
+ return lines.flatMap(line=>[{text:line,pause:900},{text:"",pause:450}]);
+}
 let speechQueue=[],speechQueueTimer=null,speechQueueDone=null,speechNext=null,speechCurrentItem=null,speechPaused=false,speechSuppressEnd=false,speechPlaybackMode="day",speechPlaybackDay=0,speechPlaybackLogs=[],speechPlaybackIndex=0,speechPlayerEntries=[],speechPlayerIndex=0,speechPlayerId=0;
 function speakText(text,onend){
  if(!("speechSynthesis" in window)||!window.SpeechSynthesisUtterance)return;
@@ -465,7 +528,18 @@ function speakSelectedPlayerHistory(){
 }
 function speakSelectedSpeech(){
  if(speechPaused){resumeSpeech();return;}
+ const mode=$("speechModeSelect")?.value||"normal";
  const playerId=+($("speechPlayerSelect")?.value||0);
+ const day=+($("speechDaySelect")?.value||dayNumber||0);
+ if(mode==="timeline"){
+   if(playerId){
+     const person=people.find(p=>p.id===playerId);
+     if(person)filterLogByPlayer(person,"timeline");
+     speakQueue(speechItemsFromLines(playerTimelineLines(playerId)));
+   }
+   else speakQueue(speechItemsFromLines(daySummaryLines(day)));
+   return;
+ }
  if(playerId)speakSelectedPlayerHistory();
  else speakSelectedDayHistory();
 }
@@ -795,11 +869,15 @@ function renderLogFilters(){
  dayFilter.value=+dayValue>0&&+dayValue<=dayNumber?dayValue:"";
 }
 function renderSpeechControls(){
+ const modeSelect=$("speechModeSelect");
  const daySelect=$("speechDaySelect");
  const playerSelect=$("speechPlayerSelect");
- if(!daySelect||!playerSelect)return;
+ if(!modeSelect||!daySelect||!playerSelect)return;
+ const modeValue=modeSelect.value||"normal";
  const dayValue=daySelect.value;
  const playerValue=playerSelect.value;
+ modeSelect.innerHTML='<option value="normal">Обычный</option><option value="timeline">Лента</option>';
+ modeSelect.value=modeValue==="timeline"?"timeline":"normal";
  daySelect.innerHTML='<option value="">День</option>'+Array.from({length:Math.max(0,dayNumber)},(_,i)=>`<option value="${i+1}">День ${i+1}</option>`).join("");
  playerSelect.innerHTML='<option value="">Игрок</option>'+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
  playerSelect.value=people.some(p=>String(p.id)===playerValue)?playerValue:"";
@@ -956,11 +1034,12 @@ function renderFixedEventControls(){
  if(dayLabel)dayLabel.textContent=`День ${dayNumber}`;
  if(dayBtn)dayBtn.textContent="Новый день";
 }
-function filterLogByPlayer(person){
+function filterLogByPlayer(person,mode="stats"){
  const playerFilter=$("logPlayerFilter");
  const roleFilter=$("logRoleFilter");
  if(!playerFilter||!roleFilter)return;
  renderLogFilters();
+ playerPanelMode=mode;
  playerFilter.value=person.id;
  roleFilter.value="";
  filterPickPlayer=false;
@@ -970,6 +1049,7 @@ function filterLogByPlayer(person){
 function clearPlayerFilter(){
  const playerFilter=$("logPlayerFilter");
  if(playerFilter)playerFilter.value="";
+ playerPanelMode="stats";
  filterPickPlayer=false;
  selectedLogIndex=null;
  render();
@@ -1180,9 +1260,17 @@ function renderPlayerStatsPanel(){
  const playerId=$("logPlayerFilter")?.value||"";
  const person=people.find(p=>String(p.id)===playerId);
  if(!panel||!person){if(panel){panel.style.display="none";panel.innerHTML="";}return;}
+ if(playerPanelMode==="timeline"){
+   panel.style.display="block";
+   panel.innerHTML=`<b>${playerTitle(person)}</b><br>${playerTimelineLines(person.id).slice(1).map(esc).join("<br>")} <button onclick="clearPlayerFilter()">Сбросить</button>`;
+   return;
+ }
  const stats=playerStats(person);
  panel.style.display="block";
  panel.innerHTML=`<b>${playerTitle(person)}</b><br>Номинировал: ${stats.nominated}<br>Номинирован: ${stats.wasNominated}<br>Разговоры: ${stats.conversations}<br>Голосовал: ${stats.voted} <button onclick="clearPlayerFilter()">Сбросить</button>`;
+}
+function showPlayerTimeline(person){
+ filterLogByPlayer(person,"timeline");
 }
 function startPlayerFilterFromField(){
  filterPickPlayer=true;
@@ -1484,10 +1572,13 @@ function fillCardMenu(person,menu){
    let filterBtn=document.createElement("button");
    filterBtn.textContent="Фильтровать";
    filterBtn.onclick=()=>filterLogByPlayer(person);
+   let timelineBtn=document.createElement("button");
+   timelineBtn.textContent="Лента";
+   timelineBtn.onclick=()=>showPlayerTimeline(person);
    let deadBtn=document.createElement("button");
    deadBtn.textContent=person.dead?"Сделать живым":"Сделать мертвым";
    deadBtn.onclick=()=>person.dead?toggleDead(person):openDeathEditor(person,menu);
-   menu.append(filterBtn,deadBtn,colorBtn,iconBtn,unconfirmBtn);
+   menu.append(filterBtn,timelineBtn,deadBtn,colorBtn,iconBtn,unconfirmBtn);
  }else{
    menu.append(confirmBtn,unconfirmBtn,colorBtn,iconBtn);
  }
