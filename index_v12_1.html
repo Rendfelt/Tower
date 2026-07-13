@@ -471,9 +471,15 @@ function voteMatchColor(score,max){
  const light=Math.round(88-t*44);
  return `hsl(350 72% ${light}%)`;
 }
-function toggleVoteFilter(person){
+function addVoteFilter(person){
  if(!isVotesWorld())return;
- voteFilterIds=voteFilterIds.includes(person.id)?voteFilterIds.filter(id=>id!==person.id):[...voteFilterIds,person.id];
+ if(!voteFilterIds.includes(person.id))voteFilterIds=[...voteFilterIds,person.id];
+ save();
+ render();
+}
+function removeVoteFilter(person){
+ if(!isVotesWorld())return;
+ voteFilterIds=voteFilterIds.filter(id=>id!==person.id);
  save();
  render();
 }
@@ -1986,7 +1992,8 @@ function setupCardInteractions(card,menu,p){
      const dx=e.clientX-startX;
      const dy=e.clientY-startY;
      if(isVotesWorld()){
-       if(dy<-SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4)toggleVoteFilter(p);
+       if(dy<-SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4)addVoteFilter(p);
+       else if(dy>SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4)removeVoteFilter(p);
        moved=false;
        dragging=false;
        return;
