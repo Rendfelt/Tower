@@ -1700,6 +1700,8 @@ function setupCardInteractions(card,menu,p){
    }
    if(votingTargetId){
      e.preventDefault();
+     e.stopPropagation();
+     if(p.dead&&p.deadVoteUsed)return;
      voteForNominee(p);
      return;
    }
@@ -1758,6 +1760,11 @@ function setupCardInteractions(card,menu,p){
    const hadCapture=card.hasPointerCapture(e.pointerId);
    if(!hadCapture)return;
    card.releasePointerCapture(e.pointerId);
+  if(votingTargetId){
+     moved=false;
+     dragging=false;
+     return;
+   }
   if(effectiveFieldLocked()){
      const dx=e.clientX-startX;
      const dy=e.clientY-startY;
