@@ -455,6 +455,9 @@ function voteTopPeers(personId,matrix=voteCoincidenceMatrix(),limit=5){
    .sort((a,b)=>b.count-a.count||a.person.name.localeCompare(b.person.name,"ru"))
    .slice(0,limit);
 }
+function voteBestPeerCount(personId,matrix=voteCoincidenceMatrix()){
+ return Math.max(0,...people.filter(p=>p.id!==personId).map(p=>voteCoincidenceCount(matrix,personId,p.id)));
+}
 function voteFilterScoreMap(){
  const matrix=voteCoincidenceMatrix();
  const selected=voteFilterIds.filter(id=>people.some(p=>p.id===id));
@@ -1068,7 +1071,8 @@ function renderVoteLinkList(){
  const list=$("loglist");
  if(!list)return;
  const matrix=voteCoincidenceMatrix();
- list.innerHTML=`<div class="vote-link-list">${people.map(p=>{
+ const sortedPeople=people.slice().sort((a,b)=>voteBestPeerCount(b.id,matrix)-voteBestPeerCount(a.id,matrix)||a.name.localeCompare(b.name,"ru"));
+ list.innerHTML=`<div class="vote-link-list">${sortedPeople.map(p=>{
    const peers=voteTopPeers(p.id,matrix).map(item=>`${esc(item.person.name)} (${item.count})`).join(", ");
    return `<div class="vote-link-item"><b>${playerTitle(p)}</b><div class="vote-link-peers">${peers||"Совпадений нет"}</div></div>`;
  }).join("")}</div>`;
