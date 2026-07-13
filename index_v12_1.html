@@ -378,6 +378,7 @@ function playerTimelineLines(playerId){
  const lines=[`Лента игрока ${person.name}`];
  dayBuckets().forEach((dayLogs,day)=>{
    const parts=[];
+   let conversations=0;
    dayLogs.forEach(log=>{
      if(log.type==="nomination"){
        if(log.sourceId===playerId)parts.push(`номинировал ${playerName(log.targetId)}`);
@@ -385,12 +386,12 @@ function playerTimelineLines(playerId){
        if((log.votes||[]).includes(playerId))parts.push(`голосовал за ${playerName(log.targetId)}`);
      }
      if(log.type==="conversation"){
-       if(log.sourceId===playerId)parts.push(`общался с ${(log.targetIds||[]).map(playerName).join(", ")}`);
-       else if((log.targetIds||[]).includes(playerId))parts.push(`общался с ${playerName(log.sourceId)}`);
+       if(log.sourceId===playerId||(log.targetIds||[]).includes(playerId))conversations++;
      }
      if(log.type==="death"&&log.playerId===playerId)parts.push(log.dead?deathReasonText(log):"ожил");
      if(log.type==="dead-vote"&&log.playerId===playerId)parts.push(`использовал мертвый голос за ${playerName(log.targetId)}`);
    });
+   if(conversations)parts.push(`разговоров: ${conversations}`);
    if(parts.length)lines.push(`День ${day}: ${parts.join("; ")}`);
  });
  if(lines.length===1)lines.push("Событий нет");
