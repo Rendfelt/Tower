@@ -101,7 +101,8 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .card.vote-filtered{box-shadow:0 0 0 4px rgba(255,208,51,.95),0 0 24px rgba(255,208,51,.55),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .card.vote-match-tint{background:linear-gradient(180deg,var(--vote-match-color,#e7b8d6),#b487d7)}
 .vote-match-score{font-size:24px;font-weight:bold;color:#2d0710;text-shadow:0 1px 0 rgba(255,255,255,.35);margin:2px 0 4px}
-.vote-filter-reset{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;padding:12px 18px;border:2px solid var(--gold);border-radius:10px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;font-size:24px;box-shadow:0 8px 24px rgba(0,0,0,.42)}
+.vote-filter-reset{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;padding:14px;border:2px solid var(--gold);border-radius:10px;background:linear-gradient(180deg,rgba(38,17,62,.94),rgba(15,8,28,.96));box-shadow:0 8px 24px rgba(0,0,0,.42)}
+.vote-filter-reset button{font-size:22px;padding:9px 14px}
 .log-selected .card{opacity:.45;filter:saturate(.72)}
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
@@ -1598,11 +1599,14 @@ if(eventHint.innerHTML){
  field.append(fieldHint);
 }
 if(isVotesWorld()&&voteFilterIds.length){
+ let resetBox=document.createElement("div");
+ resetBox.className="vote-filter-reset";
+ resetBox.addEventListener("pointerdown",e=>e.stopPropagation());
  let resetBtn=document.createElement("button");
- resetBtn.className="vote-filter-reset";
  resetBtn.textContent="Сбросить фильтр";
  resetBtn.onclick=clearVoteFilters;
- field.append(resetBtn);
+ resetBox.append(resetBtn);
+ field.append(resetBox);
 }
 roles.forEach(r=>{
  let li=document.createElement("li");
