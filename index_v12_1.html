@@ -37,6 +37,7 @@ details.log-panel{width:1000px;margin:14px 20px 0}
 body.stat-world .system-header,body.stat-world details.log-panel,body.stat-world .world-tabs,body.stat-world .stats-panel,body.stat-world .stat-world-controls{width:1200px}
 body.stat-world #field{width:1200px;height:1200px}
 body.stat-world .field-wrap{width:1200px}
+body.votes-world .logcomposer,body.votes-world .fixed-events,body.votes-world .logfilters,body.votes-world .speech-surface,body.votes-world .speech-controls,body.votes-world .stats-panel,body.votes-world .stat-world-controls{display:none}
 .logcomposer{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;margin:0 0 10px 0}
 .logcomposer input,.logcomposer select,.logcomposer button{font-size:20px;padding:9px 10px}
 .logfilters{display:flex;gap:8px;margin:0 0 10px 0}
@@ -51,6 +52,10 @@ body.stat-world .speech-controls{width:1200px}
 .speech-surface{width:1000px;height:370px;box-sizing:border-box;margin:14px 20px 0;border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,rgba(38,17,62,.92),rgba(15,8,28,.96));box-shadow:inset 0 0 24px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);font-size:28px;touch-action:none;user-select:none;-webkit-user-select:none}
 body.stat-world .speech-surface{width:1200px}
 .logbox{height:270px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(38,17,62,.98),rgba(15,8,28,.98));color:var(--ink);padding:10px 12px;font-size:20px;box-shadow:inset 0 0 24px rgba(0,0,0,.35)}
+.vote-link-list{display:flex;flex-direction:column;gap:8px}
+.vote-link-item{padding:8px 10px;border-bottom:1px solid rgba(216,200,239,.18)}
+.vote-link-item b{color:#f4d36f}
+.vote-link-peers{margin-top:4px;color:#f6edf9}
 .logitem{padding:6px 8px;border-bottom:1px solid rgba(216,200,239,.18);border-radius:6px;cursor:pointer}
 .logitem.selected{background:rgba(216,177,92,.18);box-shadow:inset 0 0 0 1px rgba(255,208,51,.55)}
 .logitem.fixed-event{color:#ffd033;font-weight:bold;text-shadow:0 0 12px rgba(255,196,36,.55)}
@@ -88,6 +93,10 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(216,2
 .card.vote-target{background:linear-gradient(180deg,#ffe98f,#d18b1f);border-color:#fff3a8;box-shadow:0 0 0 3px rgba(255,232,120,.8),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
 .card.vote-done{cursor:default;opacity:.75}
+.card.vote-filtered{box-shadow:0 0 0 4px rgba(255,208,51,.95),0 0 24px rgba(255,208,51,.55),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
+.card.vote-match-tint{background:linear-gradient(180deg,var(--vote-match-color,#e7b8d6),#b487d7)}
+.vote-match-score{font-size:24px;font-weight:bold;color:#2d0710;text-shadow:0 1px 0 rgba(255,255,255,.35);margin:2px 0 4px}
+.vote-filter-reset{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;padding:12px 18px;border:2px solid var(--gold);border-radius:10px;background:linear-gradient(180deg,#f4d36f,#8f5b16);color:#1c0f05;font-size:24px;box-shadow:0 8px 24px rgba(0,0,0,.42)}
 .log-selected .card{opacity:.45;filter:saturate(.72)}
 .log-selected .card.log-highlighted{opacity:1;filter:none;box-shadow:var(--log-rings),0 0 26px rgba(255,208,51,.42),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .vote-count{font-size:18px;font-weight:bold;color:#a94444;margin-bottom:4px}
@@ -174,7 +183,7 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="",statEventVisible=false,playerPanelMode="stats";
+let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="",statEventVisible=false,playerPanelMode="stats",voteFilterIds=[];
 const activeTouchPointers=new Set();
 function cancelAllCardGestures(){
  document.querySelectorAll(".card").forEach(card=>{
@@ -191,9 +200,11 @@ function clonePeople(list=people){return JSON.parse(JSON.stringify(list));}
 function deathOnlyPersonFromMain(p){
  return {id:p.id,name:p.name,roles:[],confirmedRoles:[],dead:!!p.dead,deadVoteUsed:!!p.deadVoteUsed,color:"blue",icons:[],x:p.x||0,y:p.y||0,deathReason:p.dead?p.deathReason||"":""};
 }
+function votesPersonFromMain(p){return clonePeople([p])[0];}
 function currentWorld(){return worlds.find(w=>w.id===currentWorldId)||worlds[0];}
 function isMainWorld(){return currentWorldId===1;}
 function isDeathOnlyWorld(){return currentWorld()?.kind==="death-only";}
+function isVotesWorld(){return currentWorld()?.kind==="votes";}
 function systemPanelOpen(){return !!document.querySelector(".system-panel")?.open;}
 function effectiveFieldLocked(){return !isMainWorld()||!systemPanelOpen();}
 function normalizeWorlds(){
@@ -217,13 +228,24 @@ function normalizeWorlds(){
  deathWorld.id=2;
  deathWorld.name="Стата";
  deathWorld.kind="death-only";
+ const occupiedThird=worlds.find(w=>w.id===3&&w.kind!=="votes");
+ if(occupiedThird)occupiedThird.id=Math.max(3,...worlds.map(w=>w.id))+1;
+ let votesWorld=worlds.find(w=>w.kind==="votes")||worlds.find(w=>w.id===3);
+ if(!votesWorld){
+   votesWorld={id:3,name:"Голосования",kind:"votes",people:[]};
+   worlds.splice(2,0,votesWorld);
+ }
+ votesWorld.id=3;
+ votesWorld.name="Голосования";
+ votesWorld.kind="votes";
  syncDeathOnlyWorld();
- worlds.sort((a,b)=>a.id===1?-1:b.id===1?1:a.id===2?-1:b.id===2?1:a.id-b.id);
+ syncVotesWorld();
+ worlds.sort((a,b)=>a.id===1?-1:b.id===1?1:a.id===2?-1:b.id===2?1:a.id===3?-1:b.id===3?1:a.id-b.id);
  if(!worlds.some(w=>w.id===currentWorldId))currentWorldId=worlds[0].id;
 }
 function syncActiveWorld(){
  const world=currentWorld();
- if(world&&!isDeathOnlyWorld())world.people=clonePeople(people);
+ if(world&&!isDeathOnlyWorld()&&!isVotesWorld())world.people=clonePeople(people);
 }
 function syncDeathOnlyWorld(){
  const main=worlds.find(w=>w.id===1);
@@ -231,8 +253,15 @@ function syncDeathOnlyWorld(){
  if(!main||!deathWorld)return;
  deathWorld.people=(main.people||[]).map(deathOnlyPersonFromMain);
 }
+function syncVotesWorld(){
+ const main=worlds.find(w=>w.id===1);
+ const votesWorld=worlds.find(w=>w.kind==="votes");
+ if(!main||!votesWorld)return;
+ votesWorld.people=(main.people||[]).map(votesPersonFromMain);
+}
 function loadActiveWorld(){
  syncDeathOnlyWorld();
+ syncVotesWorld();
  const world=currentWorld();
  people=world?clonePeople(world.people):[];
  normalizePeople();
@@ -248,6 +277,7 @@ function syncDeathToOtherWorlds(sourcePerson){
    target.deathReason=sourcePerson.deathReason||"";
  });
  syncDeathOnlyWorld();
+ syncVotesWorld();
 }
 function forEachRoleByType(callback){
  let hasPreviousType=false;
@@ -399,6 +429,58 @@ function playerTimelineLines(playerId){
 }
 function speechItemsFromLines(lines){
  return lines.flatMap(line=>[{text:line,pause:900},{text:"",pause:450}]);
+}
+function voteCoincidenceMatrix(){
+ const matrix=new Map();
+ const add=(a,b)=>{
+   if(a==null||b==null||a===b)return;
+   const key=a<b?`${a}:${b}`:`${b}:${a}`;
+   matrix.set(key,(matrix.get(key)||0)+1);
+ };
+ logs.forEach(log=>{
+   if(log.type!=="nomination")return;
+   const votes=[...new Set(log.votes||[])];
+   for(let i=0;i<votes.length;i++)for(let j=i+1;j<votes.length;j++)add(votes[i],votes[j]);
+ });
+ return matrix;
+}
+function voteCoincidenceCount(matrix,a,b){
+ if(a==null||b==null||a===b)return 0;
+ const key=a<b?`${a}:${b}`:`${b}:${a}`;
+ return matrix.get(key)||0;
+}
+function voteTopPeers(personId,matrix=voteCoincidenceMatrix(),limit=5){
+ return people.filter(p=>p.id!==personId).map(p=>({person:p,count:voteCoincidenceCount(matrix,personId,p.id)}))
+   .filter(item=>item.count>0)
+   .sort((a,b)=>b.count-a.count||a.person.name.localeCompare(b.person.name,"ru"))
+   .slice(0,limit);
+}
+function voteFilterScoreMap(){
+ const matrix=voteCoincidenceMatrix();
+ const selected=voteFilterIds.filter(id=>people.some(p=>p.id===id));
+ const scores=new Map();
+ people.forEach(p=>{
+   if(selected.includes(p.id))return;
+   const total=selected.reduce((sum,id)=>sum+voteCoincidenceCount(matrix,id,p.id),0);
+   if(total>0)scores.set(p.id,total);
+ });
+ return scores;
+}
+function voteMatchColor(score,max){
+ const t=max?Math.max(.12,score/max):0;
+ const light=Math.round(88-t*44);
+ return `hsl(350 72% ${light}%)`;
+}
+function toggleVoteFilter(person){
+ if(!isVotesWorld())return;
+ voteFilterIds=voteFilterIds.includes(person.id)?voteFilterIds.filter(id=>id!==person.id):[...voteFilterIds,person.id];
+ save();
+ render();
+}
+function clearVoteFilters(){
+ voteFilterIds=[];
+ save();
+ render();
 }
 let speechQueue=[],speechQueueTimer=null,speechQueueDone=null,speechNext=null,speechCurrentItem=null,speechPaused=false,speechSuppressEnd=false,speechPlaybackMode="day",speechPlaybackDay=0,speechPlaybackLogs=[],speechPlaybackIndex=0,speechPlayerEntries=[],speechPlayerIndex=0,speechPlayerId=0;
 function speakText(text,onend){
@@ -759,7 +841,7 @@ function applyStatEventState(state){
  statEventFilter=state?.event||"";
  statEventVisible=!!state?.visible&&!!statDayFilter&&!!statEventFilter;
 }
-function save(){syncActiveWorld();syncDeathOnlyWorld();localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked,statEventState:statEventState()}));}
+function save(){syncActiveWorld();syncDeathOnlyWorld();syncVotesWorld();localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked,statEventState:statEventState(),voteFilterIds}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
  if(!isMainWorld())return;
@@ -976,9 +1058,21 @@ function logMatchesFilters(log,index){
  if(role&&!logRoles(log).includes(+role)&&!text.includes(role.toLowerCase()))return false;
  return true;
 }
+function renderVoteLinkList(){
+ const list=$("loglist");
+ if(!list)return;
+ const matrix=voteCoincidenceMatrix();
+ list.innerHTML=`<div class="vote-link-list">${people.map(p=>{
+   const peers=voteTopPeers(p.id,matrix).map(item=>`${esc(item.person.name)} (${item.count})`).join(", ");
+   return `<div class="vote-link-item"><b>${playerTitle(p)}</b><div class="vote-link-peers">${peers||"Совпадений нет"}</div></div>`;
+ }).join("")}</div>`;
+}
 function renderLog(){
  const list=$("loglist");
  if(!list)return;
+ const summary=document.querySelector("details.log-panel summary");
+ if(summary)summary.textContent=isVotesWorld()?"Голосования":"Лог";
+ if(isVotesWorld()){renderVoteLinkList();return;}
  const keepTop=list.scrollTop;
  const wasAtBottom=list.scrollTop+list.clientHeight>=list.scrollHeight-10;
  renderComposerOptions();
@@ -1105,11 +1199,12 @@ function addCustomLogEvent(){
  input.value="";
  input._meta={playerIds:[],roleIds:[]};
 }
-(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;applyStatEventState(d.statEventState)}catch{}}normalizeRoles();normalizeWorlds();loadActiveWorld();})();
+(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;voteFilterIds=Array.isArray(d.voteFilterIds)?d.voteFilterIds:[];applyStatEventState(d.statEventState)}catch{}}normalizeRoles();normalizeWorlds();loadActiveWorld();})();
 async function exportJson(){
  syncActiveWorld();
  syncDeathOnlyWorld();
- const data=JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked,statEventState:statEventState()},null,2);
+ syncVotesWorld();
+ const data=JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked,statEventState:statEventState(),voteFilterIds},null,2);
  const blob=new Blob([data],{type:"application/json"});
  if(window.showSaveFilePicker){
    try{
@@ -1132,8 +1227,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;applyStatEventState(d.statEventState);selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();loadActiveWorld();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]},{id:2,name:"Стата",kind:"death-only",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;statDayFilter="";statEventFilter="";statEventVisible=false;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;voteFilterIds=Array.isArray(d.voteFilterIds)?d.voteFilterIds:[];applyStatEventState(d.statEventState);selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();loadActiveWorld();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]},{id:2,name:"Стата",kind:"death-only",people:[]},{id:3,name:"Голосования",kind:"votes",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;statDayFilter="";statEventFilter="";statEventVisible=false;voteFilterIds=[];save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -1282,6 +1377,7 @@ function startPlayerFilterFromField(){
  votingLogId=null;
  conversationSourceId=null;
  conversationTargetIds=[];
+ selectedLogIndex=null;
  closeAllMenus();
  render();
 }
@@ -1430,11 +1526,15 @@ function render(){
 cancelAllCardGestures();
 activeTouchPointers.clear();
 document.body.classList.toggle("stat-world",isDeathOnlyWorld());
+document.body.classList.toggle("votes-world",isVotesWorld());
+voteFilterIds=voteFilterIds.filter(id=>people.some(p=>p.id===id));
 plist.innerHTML="";rlist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
 renderWorldTabs();
 renderStatControls();
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
+const voteScores=isVotesWorld()?voteFilterScoreMap():new Map();
+const maxVoteScore=Math.max(0,...voteScores.values());
 let dayBadge=document.createElement("div");
 dayBadge.id="currentDayLabel";
 dayBadge.className="day-badge";
@@ -1446,6 +1546,13 @@ if(eventHint.innerHTML){
  fieldHint.innerHTML=eventHint.innerHTML;
  fieldHint.addEventListener("pointerdown",e=>e.stopPropagation());
  field.append(fieldHint);
+}
+if(isVotesWorld()&&voteFilterIds.length){
+ let resetBtn=document.createElement("button");
+ resetBtn.className="vote-filter-reset";
+ resetBtn.textContent="Сбросить фильтр";
+ resetBtn.onclick=clearVoteFilters;
+ field.append(resetBtn);
 }
 roles.forEach(r=>{
  let li=document.createElement("li");
@@ -1514,6 +1621,12 @@ people.forEach(p=>{
  if(p.id===votingTargetId)card.classList.add("vote-target");
  else if(votingTargetId)card.classList.add("vote-voter");
  if(votes.includes(p.id))card.classList.add("vote-done");
+ if(isVotesWorld()&&voteFilterIds.includes(p.id))card.classList.add("vote-filtered");
+ const voteScore=isVotesWorld()?voteScores.get(p.id)||0:0;
+ if(isVotesWorld()&&voteScore>0){
+   card.classList.add("vote-match-tint");
+   card.style.setProperty("--vote-match-color",voteMatchColor(voteScore,maxVoteScore));
+ }
  if(selectedRings.has(p.id)){
    card.classList.add("log-highlighted");
    card.style.setProperty("--log-rings",ringShadow(selectedRings.get(p.id)));
@@ -1522,11 +1635,12 @@ people.forEach(p=>{
  p.y=Math.min(Math.max(0,p.y||0),Math.max(0,field.clientHeight-60));
  card.style.left=p.x+"px";card.style.top=p.y+"px";
  card.innerHTML=cardHtml(p,votes);
+ if(isVotesWorld()&&voteScore>0)card.querySelector("b")?.insertAdjacentHTML("afterend",`<div class="vote-match-score">${voteScore}</div>`);
 
  let menu=document.createElement("div");
  menu.className="menu";
  fillCardMenu(p,menu);
- card.append(menu);
+ if(!isVotesWorld())card.append(menu);
 
  setupCardInteractions(card,menu,p);
 
@@ -1557,7 +1671,7 @@ function renderWorldTabs(){
 function fillCardMenu(person,menu){
  menu.innerHTML="";
  menu.classList.remove("role-choice-menu");
- if(isDeathOnlyWorld())return;
+ if(isDeathOnlyWorld()||isVotesWorld())return;
  let colorBtn=document.createElement("button");
  colorBtn.textContent="Цвет плашки";
  colorBtn.onclick=()=>openColorEditor(person,menu);
@@ -1754,6 +1868,7 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("contextmenu",e=>{
    e.preventDefault();
+   if(isVotesWorld())return;
    if(!effectiveFieldLocked())return;
    e.stopPropagation();
    openCardMenu(card,menu);
@@ -1769,7 +1884,16 @@ function setupCardInteractions(card,menu,p){
      }
    }
    if(e.button!==0 || e.target.closest(".menu"))return;
-   if(anyCardMenuOpen())return;
+  if(anyCardMenuOpen())return;
+   if(isVotesWorld()){
+     e.preventDefault();
+     e.stopPropagation();
+     startX=e.clientX;
+     startY=e.clientY;
+     moved=false;
+     card.setPointerCapture(e.pointerId);
+     return;
+   }
    if(selectedLogIndex!=null){
      e.preventDefault();
      selectedLogIndex=null;
@@ -1861,6 +1985,12 @@ function setupCardInteractions(card,menu,p){
   if(effectiveFieldLocked()){
      const dx=e.clientX-startX;
      const dy=e.clientY-startY;
+     if(isVotesWorld()){
+       if(dy<-SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4)toggleVoteFilter(p);
+       moved=false;
+       dragging=false;
+       return;
+     }
      if(!isMainWorld()){
        if(!moved)openCardMenu(card,menu);
      }else if(dy<-SWIPE_LIMIT && Math.abs(dy)>Math.abs(dx)*1.4){
