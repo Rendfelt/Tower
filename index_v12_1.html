@@ -486,6 +486,9 @@ function voteDifferenceScoreMap(selected){
  const scores=new Map();
  const sourceId=selected[selected.length-1];
  if(!sourceId)return scores;
+ people.forEach(p=>{
+   if(p.id!==sourceId)scores.set(p.id,0);
+ });
  logs.forEach(log=>{
    if(log.type!=="nomination")return;
    const votes=log.votes||[];
@@ -521,9 +524,10 @@ function voteFilterScoreMap(){
  });
  return scores;
 }
-function voteMatchColor(score,min,max){
+function voteMatchColor(score,min,max,reverse=false){
  const range=max-min;
- const t=range>0?Math.max(0,(score-min)/range):1;
+ const base=range>0?Math.max(0,(score-min)/range):0;
+ const t=reverse?1-base:base;
  const light=Math.round(88-t*44);
  return `hsl(350 72% ${light}%)`;
 }
@@ -1748,11 +1752,12 @@ people.forEach(p=>{
  else if(votingTargetId)card.classList.add("vote-voter");
  if(votes.includes(p.id))card.classList.add("vote-done");
  if(isVotesWorld()&&voteFilterIds.includes(p.id))card.classList.add("vote-filtered");
- const voteScore=isVotesWorld()?voteScores.get(p.id)||0:0;
- if(isVotesWorld()&&voteScore>0){
-   if(voteScore>minVoteScore){
+ const hasVoteScore=isVotesWorld()&&voteScores.has(p.id);
+ const voteScore=hasVoteScore?voteScores.get(p.id):0;
+ if(hasVoteScore){
+   if(voteDifferentMode?voteScore<maxVoteScore:voteScore>minVoteScore){
      card.classList.add("vote-match-tint");
-     card.style.setProperty("--vote-match-color",voteMatchColor(voteScore,minVoteScore,maxVoteScore));
+     card.style.setProperty("--vote-match-color",voteMatchColor(voteScore,minVoteScore,maxVoteScore,voteDifferentMode));
    }
  }
  if(selectedRings.has(p.id)){
@@ -1763,7 +1768,7 @@ people.forEach(p=>{
  p.y=Math.min(Math.max(0,p.y||0),Math.max(0,field.clientHeight-60));
  card.style.left=p.x+"px";card.style.top=p.y+"px";
  card.innerHTML=cardHtml(p,votes);
- if(isVotesWorld()&&voteScore>0)card.querySelector("b")?.insertAdjacentHTML("afterend",`<div class="vote-match-score">${voteScore}</div>`);
+ if(hasVoteScore)card.querySelector("b")?.insertAdjacentHTML("afterend",`<div class="vote-match-score">${voteScore}</div>`);
 
  let menu=document.createElement("div");
  menu.className="menu";
