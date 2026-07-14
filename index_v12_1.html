@@ -303,12 +303,33 @@ function startSwipeCardPolicy(text){
 }
 function addNominationLog(sourceId,targetId){
  const electorateIds=people.filter(p=>!p.dead).map(p=>p.id);
- const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[],againstVotes:[],electorateIds};
+ const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[],againstVotes:[],voteMode,electorateIds};
  logs.push(log);
  if(logs.length>500)logs=logs.slice(-500);
  save();
  renderLog();
  return log;
+}
+function nominationElectorateIds(log){
+ return log.electorateIds||people.filter(p=>!p.dead).map(p=>p.id);
+}
+function nominationMode(log){
+ if(!log.voteMode&&(log.againstVotes||[]).length&&!(log.votes||[]).length)return "against";
+ return log.voteMode==="against"?"against":"for";
+}
+function nominationForIds(log){
+ const electorateIds=nominationElectorateIds(log);
+ if(nominationMode(log)==="against"){
+   const againstIds=log.againstVotes||[];
+   return electorateIds.filter(id=>!againstIds.includes(id));
+ }
+ return log.votes||[];
+}
+function nominationAgainstIds(log){
+ const electorateIds=nominationElectorateIds(log);
+ if(nominationMode(log)==="against")return log.againstVotes||[];
+ const voteIds=log.votes||[];
+ return electorateIds.filter(id=>!voteIds.includes(id));
 }
 function addConversationLog(sourceId,targetIds){
  logs.push({type:"conversation",time:logTime(),sourceId,targetIds:[...targetIds]});
@@ -332,9 +353,8 @@ function logText(log){
  if(log.type==="nomination"){
    const source=playerName(log.sourceId);
    const target=playerName(log.targetId);
-   const voteIds=log.votes||[];
-   const electorateIds=log.electorateIds||people.filter(p=>!p.dead).map(p=>p.id);
-   const againstIds=Array.isArray(log.againstVotes)&&log.againstVotes.length?log.againstVotes:electorateIds.filter(id=>!voteIds.includes(id));
+   const voteIds=nominationForIds(log);
+   const againstIds=nominationAgainstIds(log);
    const votes=voteIds.map(playerName).join(", ");
    const against=againstIds.map(playerName).join(", ");
    return `${source} назначает канцлером ${target}\nза голосуют (${voteIds.length}): ${votes}\nпротив голосуют (${againstIds.length}): ${against}`;
@@ -434,9 +454,9 @@ function voteDifferenceScoreMap(sourceId){
  if(!sourceId)return scores;
  logs.forEach(log=>{
    if(log.type!=="nomination")return;
-   const electorateIds=log.electorateIds||people.filter(p=>!p.dead).map(p=>p.id);
+   const electorateIds=nominationElectorateIds(log);
    if(!electorateIds.includes(sourceId))return;
-   const voteIds=log.votes||[];
+   const voteIds=nominationForIds(log);
    const sourceVoted=voteIds.includes(sourceId);
    electorateIds.forEach(id=>{
      if(id===sourceId)return;
@@ -507,8 +527,8 @@ function selectedLogRings(){
  if(log.type==="nomination"){
    add(log.sourceId,"rgba(83,180,255,.95)");
    add(log.targetId,"rgba(214,59,79,.95)");
-   (log.votes||[]).forEach(id=>add(id,"rgba(255,208,51,.9)"));
-   (log.againstVotes||[]).forEach(id=>add(id,"rgba(214,59,79,.9)"));
+   nominationForIds(log).forEach(id=>add(id,"rgba(255,208,51,.9)"));
+   nominationAgainstIds(log).forEach(id=>add(id,"rgba(214,59,79,.9)"));
  }else{
    logPlayers(log).forEach(id=>add(id,"rgba(255,208,51,.9)"));
  }
@@ -708,13 +728,17 @@ function currentVotingLog(){
  return votingTargetId?[...logs].reverse().find(l=>l.type==="nomination"&&l.targetId===votingTargetId):null;
 }
 function currentVotes(){
- return currentVotingLog()?.votes||[];
+ const log=currentVotingLog();
+ return log?nominationForIds(log):[];
 }
 function currentAgainstVotes(){
- return currentVotingLog()?.againstVotes||[];
+ const log=currentVotingLog();
+ return log?nominationAgainstIds(log):[];
 }
 function setVoteMode(mode){
  voteMode=mode==="against"?"against":"for";
+ const log=currentVotingLog();
+ if(log)log.voteMode=voteMode;
  save();
  render();
 }
@@ -776,8 +800,11 @@ function finishNomination(target){
  render();
 }
 function cancelVoting(){
+ const log=currentVotingLog();
+ if(log)log.voteMode=voteMode;
  votingTargetId=null;
  votingLogId=null;
+ save();
  render();
 }
 function cancelCardPolicy(){
@@ -824,6 +851,7 @@ function voteForNominee(voter){
  if(log){
    log.votes=log.votes||[];
    log.againstVotes=log.againstVotes||[];
+   log.voteMode=voteMode;
    if(voteMode==="against"){
      log.votes=log.votes.filter(id=>id!==voter.id);
      if(log.againstVotes.includes(voter.id))log.againstVotes=log.againstVotes.filter(id=>id!==voter.id);
