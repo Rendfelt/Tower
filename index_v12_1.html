@@ -187,11 +187,11 @@ input:focus{outline:2px solid rgba(194,144,255,.45);outline-offset:1px}
 <p><label class=switch><input id=deadVoteUnlimitedToggle type=checkbox onchange="setDeadVoteUnlimited(this.checked)"><span class=switch-track></span><span class=switch-label>Мертвый анлим</span></label></p></div>
 
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details><details class=panel><summary>Роли</summary><ul id=rlist></ul></details></div></details><img class=corner-logo src="https://bloodontheclocktower.com/cdn/shop/files/logo_3.png" alt=""></div>
-<div id=eventHint class=event-hint></div><div id=voteWorldControls class=vote-world-controls><label class=switch><input id=voteTogetherToggle type=checkbox onchange="setVoteTogetherMode(this.checked)"><span class=switch-track></span><span class=switch-label>Вместе</span></label><label class=switch><input id=voteAgainstToggle type=checkbox onchange="setVoteAgainstMode(this.checked)"><span class=switch-track></span><span class=switch-label>Против</span></label><label class=switch><input id=voteDeadToggle type=checkbox onchange="setVoteDeadMode(this.checked)"><span class=switch-track></span><span class=switch-label>Мертвый</span></label></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details><div id=speechSurface class=speech-surface>Свайп: предыдущий / следующий лог<br>Долгое нажатие: предыдущий / следующий день</div><div class=speech-controls><div class=speech-buttons><button onclick="speakSelectedSpeech()">▶</button><button onclick="stopSpeech()">■</button></div><div class=speech-selects><select id=speechModeSelect></select><select id=speechDaySelect onchange="selectSpeechDay()"></select><select id=speechPlayerSelect onchange="selectSpeechPlayer()"></select></div></div>
+<div id=eventHint class=event-hint></div><div id=voteWorldControls class=vote-world-controls><label class=switch><input id=voteTogetherToggle type=checkbox onchange="setVoteTogetherMode(this.checked)"><span class=switch-track></span><span class=switch-label>Вместе</span></label><label class=switch><input id=voteAgainstToggle type=checkbox onchange="setVoteAgainstMode(this.checked)"><span class=switch-track></span><span class=switch-label>Против</span></label><label class=switch><input id=voteDeadToggle type=checkbox onchange="setVoteDeadMode(this.checked)"><span class=switch-track></span><span class=switch-label>Мертвый</span></label><label class=switch><input id=voteDifferentToggle type=checkbox onchange="setVoteDifferentMode(this.checked)"><span class=switch-track></span><span class=switch-label>Разные</span></label></div><div id=worldTabs class=world-tabs></div><div class=field-wrap><div id=field></div></div><div id=statWorldControls class=stat-world-controls><select id=statDaySelect></select><select id=statEventSelect><option value="">Событие</option><option value="conversation">общался</option><option value="voted">голосовал</option><option value="nominated">номинировал</option><option value="wasNominated">номинирован</option></select><button onclick="showStatEventFilter()">Показать</button></div><div id=playerStatsPanel class=stats-panel></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><select id=logInsertRole onchange="insertLogRole()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><button id=dayEventBtn onclick="addDayLog()"></button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logRoleFilter onchange="renderLog()"></select><select id=logDayFilter onchange="renderLog()"></select><button onclick="resetLogFilters()">Сброс</button></div><div id=loglist class=logbox></div></details><div id=speechSurface class=speech-surface>Свайп: предыдущий / следующий лог<br>Долгое нажатие: предыдущий / следующий день</div><div class=speech-controls><div class=speech-buttons><button onclick="speakSelectedSpeech()">▶</button><button onclick="stopSpeech()">■</button></div><div class=speech-selects><select id=speechModeSelect></select><select id=speechDaySelect onchange="selectSpeechDay()"></select><select id=speechPlayerSelect onchange="selectSpeechPlayer()"></select></div></div>
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,deadVoteUnlimited=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="",statEventVisible=false,playerPanelMode="stats",voteFilterIds=[],voteTogetherMode=false,voteAgainstMode=false,voteDeadMode=false;
+let people=[],roles=[],logs=[],worlds=[],pid=1,rid=1,dayNumber=0,currentWorldId=1,fieldLocked=false,deadVoteUnlimited=false,nominationPickSource=false,filterPickPlayer=false,nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null,statDayFilter="",statEventFilter="",statEventVisible=false,playerPanelMode="stats",voteFilterIds=[],voteTogetherMode=false,voteAgainstMode=false,voteDeadMode=false,voteDifferentMode=false;
 const activeTouchPointers=new Set();
 function cancelAllCardGestures(){
  document.querySelectorAll(".card").forEach(card=>{
@@ -482,9 +482,28 @@ function deadVoteAllowedIds(selected){
  }
  return null;
 }
+function voteDifferenceScoreMap(selected){
+ const scores=new Map();
+ const sourceId=selected[selected.length-1];
+ if(!sourceId)return scores;
+ logs.forEach(log=>{
+   if(log.type!=="nomination")return;
+   const votes=log.votes||[];
+   const sourceVoted=votes.includes(sourceId);
+   people.forEach(p=>{
+     if(p.id===sourceId)return;
+     if(votes.includes(p.id)!==sourceVoted)scores.set(p.id,(scores.get(p.id)||0)+1);
+   });
+ });
+ return scores;
+}
+function normalizeVoteDifferentSelection(){
+ if(voteDifferentMode&&voteFilterIds.length>1)voteFilterIds=[voteFilterIds[voteFilterIds.length-1]];
+}
 function voteFilterScoreMap(){
  const matrix=voteCoincidenceMatrix();
  const selected=voteFilterIds.filter(id=>people.some(p=>p.id===id));
+ if(voteDifferentMode)return voteDifferenceScoreMap(selected);
  const deadAllowed=deadVoteAllowedIds(selected);
  const scores=new Map();
  people.forEach(p=>{
@@ -510,7 +529,8 @@ function voteMatchColor(score,min,max){
 }
 function addVoteFilter(person){
  if(!isVotesWorld())return;
- if(!voteFilterIds.includes(person.id))voteFilterIds=[...voteFilterIds,person.id];
+ if(voteDifferentMode)voteFilterIds=[person.id];
+ else if(!voteFilterIds.includes(person.id))voteFilterIds=[...voteFilterIds,person.id];
  save();
  render();
 }
@@ -543,6 +563,12 @@ function setVoteAgainstMode(enabled){
 }
 function setVoteDeadMode(enabled){
  voteDeadMode=!!enabled;
+ save();
+ render();
+}
+function setVoteDifferentMode(enabled){
+ voteDifferentMode=!!enabled;
+ normalizeVoteDifferentSelection();
  save();
  render();
 }
@@ -910,7 +936,7 @@ function applyStatEventState(state){
  statEventFilter=state?.event||"";
  statEventVisible=!!state?.visible&&!!statDayFilter&&!!statEventFilter;
 }
-function save(){syncActiveWorld();syncDeathOnlyWorld();syncVotesWorld();localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked,deadVoteUnlimited,statEventState:statEventState(),voteFilterIds,voteTogetherMode,voteAgainstMode,voteDeadMode}));}
+function save(){syncActiveWorld();syncDeathOnlyWorld();syncVotesWorld();localStorage.setItem(KEY,JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked,deadVoteUnlimited,statEventState:statEventState(),voteFilterIds,voteTogetherMode,voteAgainstMode,voteDeadMode,voteDifferentMode}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
  if(!isMainWorld())return;
@@ -1130,6 +1156,16 @@ function logMatchesFilters(log,index){
 function renderVoteLinkList(){
  const list=$("loglist");
  if(!list)return;
+ if(voteDifferentMode&&voteFilterIds.length){
+   normalizeVoteDifferentSelection();
+   const sourceId=voteFilterIds[0];
+   const source=people.find(p=>p.id===sourceId);
+   const scores=voteDifferenceScoreMap([sourceId]);
+   const rows=people.filter(p=>p.id!==sourceId).map(p=>({person:p,count:scores.get(p.id)||0}))
+     .sort((a,b)=>b.count-a.count||a.person.name.localeCompare(b.person.name,"ru"));
+   list.innerHTML=`<div class="vote-link-list"><div class="vote-link-item"><b>Разные с ${source?playerTitle(source):"игроком"}</b><div class="vote-link-peers">Несовпадения в голосованиях</div></div>${rows.map(item=>`<div class="vote-link-item" onclick="setSingleVoteFilter(${item.person.id})"><b>${playerTitle(item.person)}</b><div class="vote-link-peers">${item.count}</div></div>`).join("")}</div>`;
+   return;
+ }
  const matrix=voteCoincidenceMatrix();
  const sortedPeople=people.slice().sort((a,b)=>voteBestPeerCount(b.id,matrix)-voteBestPeerCount(a.id,matrix)||a.name.localeCompare(b.name,"ru"));
  list.innerHTML=`<div class="vote-link-list">${sortedPeople.map(p=>{
@@ -1269,12 +1305,12 @@ function addCustomLogEvent(){
  input.value="";
  input._meta={playerIds:[],roleIds:[]};
 }
-(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;deadVoteUnlimited=!!d.deadVoteUnlimited;voteFilterIds=Array.isArray(d.voteFilterIds)?d.voteFilterIds:[];voteTogetherMode=!!d.voteTogetherMode;voteAgainstMode=!!d.voteAgainstMode;voteDeadMode=!!d.voteDeadMode;applyStatEventState(d.statEventState)}catch{}}normalizeRoles();normalizeWorlds();loadActiveWorld();})();
+(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;deadVoteUnlimited=!!d.deadVoteUnlimited;voteFilterIds=Array.isArray(d.voteFilterIds)?d.voteFilterIds:[];voteTogetherMode=!!d.voteTogetherMode;voteAgainstMode=!!d.voteAgainstMode;voteDeadMode=!!d.voteDeadMode;voteDifferentMode=!!d.voteDifferentMode;normalizeVoteDifferentSelection();applyStatEventState(d.statEventState)}catch{}}normalizeRoles();normalizeWorlds();loadActiveWorld();})();
 async function exportJson(){
  syncActiveWorld();
  syncDeathOnlyWorld();
  syncVotesWorld();
- const data=JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked,deadVoteUnlimited,statEventState:statEventState(),voteFilterIds,voteTogetherMode,voteAgainstMode,voteDeadMode},null,2);
+ const data=JSON.stringify({people,roles,logs,worlds,pid,rid,dayNumber,currentWorldId,fieldLocked,deadVoteUnlimited,statEventState:statEventState(),voteFilterIds,voteTogetherMode,voteAgainstMode,voteDeadMode,voteDifferentMode},null,2);
  const blob=new Blob([data],{type:"application/json"});
  if(window.showSaveFilePicker){
    try{
@@ -1297,8 +1333,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;deadVoteUnlimited=!!d.deadVoteUnlimited;voteFilterIds=Array.isArray(d.voteFilterIds)?d.voteFilterIds:[];voteTogetherMode=!!d.voteTogetherMode;voteAgainstMode=!!d.voteAgainstMode;voteDeadMode=!!d.voteDeadMode;applyStatEventState(d.statEventState);selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();loadActiveWorld();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]},{id:2,name:"Стата",kind:"death-only",people:[]},{id:3,name:"Голосования",kind:"votes",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;deadVoteUnlimited=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;statDayFilter="";statEventFilter="";statEventVisible=false;voteFilterIds=[];voteTogetherMode=false;voteAgainstMode=false;voteDeadMode=false;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];worlds=d.worlds||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;currentWorldId=d.currentWorldId||1;fieldLocked=!!d.fieldLocked;deadVoteUnlimited=!!d.deadVoteUnlimited;voteFilterIds=Array.isArray(d.voteFilterIds)?d.voteFilterIds:[];voteTogetherMode=!!d.voteTogetherMode;voteAgainstMode=!!d.voteAgainstMode;voteDeadMode=!!d.voteDeadMode;voteDifferentMode=!!d.voteDifferentMode;normalizeVoteDifferentSelection();applyStatEventState(d.statEventState);selectedLogIndex=null;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];normalizeRoles();normalizeWorlds();loadActiveWorld();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];worlds=[{id:1,name:"Основной",people:[]},{id:2,name:"Стата",kind:"death-only",people:[]},{id:3,name:"Голосования",kind:"votes",people:[]}];pid=1;rid=1;dayNumber=0;currentWorldId=1;fieldLocked=false;deadVoteUnlimited=false;nominationPickSource=false;filterPickPlayer=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;statDayFilter="";statEventFilter="";statEventVisible=false;voteFilterIds=[];voteTogetherMode=false;voteAgainstMode=false;voteDeadMode=false;voteDifferentMode=false;save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -1612,6 +1648,8 @@ const voteAgainstToggle=$("voteAgainstToggle");
 if(voteAgainstToggle)voteAgainstToggle.checked=voteAgainstMode;
 const voteDeadToggle=$("voteDeadToggle");
 if(voteDeadToggle)voteDeadToggle.checked=voteDeadMode;
+const voteDifferentToggle=$("voteDifferentToggle");
+if(voteDifferentToggle)voteDifferentToggle.checked=voteDifferentMode;
 const deadVoteUnlimitedToggle=$("deadVoteUnlimitedToggle");
 if(deadVoteUnlimitedToggle)deadVoteUnlimitedToggle.checked=deadVoteUnlimited;
 field.classList.toggle("log-selected",selectedLogIndex!=null);
