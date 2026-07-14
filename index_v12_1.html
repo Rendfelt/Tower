@@ -303,7 +303,7 @@ function startSwipeCardPolicy(text){
 }
 function addNominationLog(sourceId,targetId){
  const electorateIds=people.filter(p=>!p.dead).map(p=>p.id);
- const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[],againstVotes:[],voteMode,electorateIds};
+ const log={id:Date.now()+"-"+Math.random().toString(16).slice(2),type:"nomination",time:logTime(),sourceId,targetId,votes:[],againstVotes:[],electorateIds};
  logs.push(log);
  if(logs.length>500)logs=logs.slice(-500);
  save();
@@ -313,23 +313,11 @@ function addNominationLog(sourceId,targetId){
 function nominationElectorateIds(log){
  return log.electorateIds||people.filter(p=>!p.dead).map(p=>p.id);
 }
-function nominationMode(log){
- if(!log.voteMode&&(log.againstVotes||[]).length&&!(log.votes||[]).length)return "against";
- return log.voteMode==="against"?"against":"for";
-}
 function nominationForIds(log){
- const electorateIds=nominationElectorateIds(log);
- if(nominationMode(log)==="against"){
-   const againstIds=log.againstVotes||[];
-   return electorateIds.filter(id=>!againstIds.includes(id));
- }
  return log.votes||[];
 }
 function nominationAgainstIds(log){
- const electorateIds=nominationElectorateIds(log);
- if(nominationMode(log)==="against")return log.againstVotes||[];
- const voteIds=log.votes||[];
- return electorateIds.filter(id=>!voteIds.includes(id));
+ return log.againstVotes||[];
 }
 function addConversationLog(sourceId,targetIds){
  logs.push({type:"conversation",time:logTime(),sourceId,targetIds:[...targetIds]});
@@ -737,8 +725,6 @@ function currentAgainstVotes(){
 }
 function setVoteMode(mode){
  voteMode=mode==="against"?"against":"for";
- const log=currentVotingLog();
- if(log)log.voteMode=voteMode;
  save();
  render();
 }
@@ -801,10 +787,19 @@ function finishNomination(target){
 }
 function cancelVoting(){
  const log=currentVotingLog();
- if(log)log.voteMode=voteMode;
+ if(log){
+   const electorateIds=nominationElectorateIds(log);
+   log.votes=log.votes||[];
+   log.againstVotes=log.againstVotes||[];
+   if(voteMode==="against"){
+     log.votes=electorateIds.filter(id=>!log.againstVotes.includes(id));
+   }else{
+     log.againstVotes=electorateIds.filter(id=>!log.votes.includes(id));
+   }
+   save();
+ }
  votingTargetId=null;
  votingLogId=null;
- save();
  render();
 }
 function cancelCardPolicy(){
@@ -851,7 +846,6 @@ function voteForNominee(voter){
  if(log){
    log.votes=log.votes||[];
    log.againstVotes=log.againstVotes||[];
-   log.voteMode=voteMode;
    if(voteMode==="against"){
      log.votes=log.votes.filter(id=>id!==voter.id);
      if(log.againstVotes.includes(voter.id))log.againstVotes=log.againstVotes.filter(id=>id!==voter.id);
