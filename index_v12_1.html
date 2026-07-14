@@ -43,7 +43,7 @@ body.votes-world .logcomposer,body.votes-world .fixed-events,body.votes-world .l
 .fixed-submenu{position:absolute;left:0;top:calc(100% + 5px);z-index:30;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;min-width:220px;padding:7px;border:1px solid rgba(166,231,255,.6);border-radius:8px;background:linear-gradient(180deg,#0b3f5e,#021827);box-shadow:0 12px 30px rgba(0,0,0,.55)}
 .fixed-submenu[hidden]{display:none}
 .fixed-submenu button{min-height:46px;font-size:22px;padding:8px 12px;text-align:center}
-.system-panel{width:300px;margin:0 0 10px}
+.field-lock-panel{width:300px;margin:0 0 10px;padding:8px 10px}
 .switch{display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--ink)}
 .switch input{position:absolute;opacity:0;pointer-events:none}
 .switch-track{width:54px;height:30px;border:1px solid var(--line);border-radius:999px;background:#031927;position:relative;box-shadow:inset 0 0 10px rgba(0,0,0,.45)}
@@ -165,9 +165,9 @@ input:focus{outline:2px solid rgba(116,221,255,.48);outline-offset:1px}
 <button onclick="resetState()">Сброс</button>
 <input id="imp" type=file accept=".json" hidden></p></div>
 
-<details class="panel system-panel"><summary>Система</summary>
+<div class=field-lock-panel>
 <label class=switch><input id=fieldLockToggle type=checkbox onchange="setFieldLocked(this.checked)"><span class=switch-track></span><span class=switch-label>Зафиксировать поле</span></label>
-</details>
+</div>
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
 <div id=worldTabs class=world-tabs></div><div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><span class=fixed-claim><button onclick="openCardPolicyMenu(event,'выложили синюю')">Выложили синюю</button><button onclick="openCardPolicyMenu(event,'выложили красную')">Выложили красную</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addCardPolicyLog(0)">0</button><button onclick="addCardPolicyLog(1)">1</button><button onclick="addCardPolicyLog(2)">2</button><button onclick="addCardPolicyLog(3)">3</button></span></span><button onclick="addDeckShuffleLog()">Шаффл колоды</button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logEventFilter onchange="renderLog()"><option value="">Все события</option><option value="cards">Выложили</option></select></div><div id=loglist class=logbox></div></details>
 
@@ -919,6 +919,7 @@ function setupCardInteractions(card,menu,p){
    e.preventDefault();
    if(isVotesWorld())return;
    if(!fieldLocked)return;
+   e.stopPropagation();
    openCardMenu(card,menu);
  });
 
@@ -953,6 +954,7 @@ function setupCardInteractions(card,menu,p){
    e.preventDefault();
    closeAllMenus();
    if(fieldLocked){
+     e.stopPropagation();
      openCardMenu(card,menu);
      return;
    }
