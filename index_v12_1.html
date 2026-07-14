@@ -42,6 +42,14 @@ details.log-panel{width:800px;margin:14px 20px 0}
 .fixed-submenu{position:absolute;left:0;top:calc(100% + 5px);z-index:30;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;min-width:220px;padding:7px;border:1px solid rgba(166,231,255,.6);border-radius:8px;background:linear-gradient(180deg,#0b3f5e,#021827);box-shadow:0 12px 30px rgba(0,0,0,.55)}
 .fixed-submenu[hidden]{display:none}
 .fixed-submenu button{min-height:46px;font-size:22px;padding:8px 12px;text-align:center}
+.system-panel{width:300px;margin:0 0 10px}
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--ink)}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch-track{width:54px;height:30px;border:1px solid var(--line);border-radius:999px;background:#031927;position:relative;box-shadow:inset 0 0 10px rgba(0,0,0,.45)}
+.switch-track::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#bfe8ff;box-shadow:0 2px 8px rgba(0,0,0,.45);transition:.16s}
+.switch input:checked+.switch-track{background:linear-gradient(180deg,var(--purple3),var(--purple))}
+.switch input:checked+.switch-track::after{transform:translateX(24px);background:#fff0a8}
+.switch-label{font-size:20px}
 .logbox{height:540px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:linear-gradient(180deg,rgba(8,51,78,.98),rgba(2,18,30,.98));color:var(--ink);padding:10px 12px;font-size:20px;box-shadow:inset 0 0 24px rgba(0,12,22,.42)}
 .logitem{padding:6px 8px;border-bottom:1px solid rgba(174,232,255,.18);border-radius:6px;cursor:pointer}
 .logitem.selected{background:rgba(216,177,92,.18);box-shadow:inset 0 0 0 1px rgba(255,208,51,.55)}
@@ -146,12 +154,15 @@ input:focus{outline:2px solid rgba(116,221,255,.48);outline-offset:1px}
 <button onclick="resetState()">Сброс</button>
 <input id="imp" type=file accept=".json" hidden></p></div>
 
+<details class="panel system-panel"><summary>Система</summary>
+<label class=switch><input id=fieldLockToggle type=checkbox onchange="setFieldLocked(this.checked)"><span class=switch-track></span><span class=switch-label>Зафиксировать поле</span></label>
+</details>
 <div class=wrap><details class=panel><summary>Игроки</summary><div id=plist></div></details></div>
 <div id=eventHint class=event-hint></div><div class=field-wrap><div id=field></div></div><details class="panel log-panel" open><summary>Лог</summary><div class=logcomposer><input id=logTextInput placeholder="Событие" onkeydown="if(event.key==='Enter')addCustomLogEvent()"><select id=logInsertPlayer onchange="insertLogPlayer()"></select><button onclick="addCustomLogEvent()">Добавить</button></div><div class=fixed-events><span class=fixed-claim><button onclick="openCardPolicyMenu(event,'выложили синюю')">Выложили синюю</button><button onclick="openCardPolicyMenu(event,'выложили красную')">Выложили красную</button><span id=blueClaimMenu class=fixed-submenu hidden><button onclick="addCardPolicyLog(0)">0</button><button onclick="addCardPolicyLog(1)">1</button><button onclick="addCardPolicyLog(2)">2</button><button onclick="addCardPolicyLog(3)">3</button></span></span><button onclick="addDeckShuffleLog()">Шаффл колоды</button></div><div class=logfilters><select id=logPlayerFilter onchange="renderLog()"></select><select id=logEventFilter onchange="renderLog()"><option value="">Все события</option><option value="cards">Выложили</option></select></div><div id=loglist class=logbox></div></details>
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,pendingCardPolicyText="",nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,fieldLocked=false,pendingCardPolicyText="",nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -197,7 +208,7 @@ function refreshRoleViews(){
  });
  renderLog();
 }
-function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,pid,rid,dayNumber,blueClaimCount}));}
+function save(){localStorage.setItem(KEY,JSON.stringify({people,roles,logs,pid,rid,dayNumber,blueClaimCount,fieldLocked}));}
 function logTime(){return new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
 function addLog(text){
  logs.push({time:logTime(),text});
@@ -465,9 +476,9 @@ function addCustomLogEvent(){
  input.value="";
  input._meta={playerIds:[],roleIds:[]};
 }
-(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0}catch{}}normalizePeople();})();
+(function(){let s=localStorage.getItem(KEY);if(s){try{let d=JSON.parse(s);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0;fieldLocked=!!d.fieldLocked}catch{}}normalizePeople();})();
 async function exportJson(){
- const data=JSON.stringify({people,roles,logs,pid,rid,dayNumber,blueClaimCount},null,2);
+ const data=JSON.stringify({people,roles,logs,pid,rid,dayNumber,blueClaimCount,fieldLocked},null,2);
  const blob=new Blob([data],{type:"application/json"});
  if(window.showSaveFilePicker){
    try{
@@ -490,8 +501,9 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;blueClaimCount=0;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0;fieldLocked=!!d.fieldLocked;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;blueClaimCount=0;fieldLocked=false;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+function setFieldLocked(enabled){fieldLocked=!!enabled;closeAllMenus();save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=72;
  const width=field?.clientWidth||800;
@@ -678,6 +690,8 @@ function cancelConversation(){
 
 function render(){
 plist.innerHTML="";field.innerHTML="";renderLog();updateEventHint();
+const fieldLockToggle=$("fieldLockToggle");
+if(fieldLockToggle)fieldLockToggle.checked=fieldLocked;
 field.classList.toggle("log-selected",selectedLogIndex!=null);
 const selectedRings=selectedLogRings();
 people.forEach(p=>{
@@ -805,10 +819,8 @@ function openConfirmedRoleEditor(person,menu,mode){
 }
 function setupCardInteractions(card,menu,p){
  const MOVE_LIMIT=8;
- const LONG_PRESS_MS=500;
- let timer=null,dragging=false,moved=false,startX=0,startY=0,ox=0,oy=0;
+ let dragging=false,moved=false,startX=0,startY=0,ox=0,oy=0;
 
- const stopTimer=()=>{if(timer){clearTimeout(timer);timer=null;}};
  const setPosition=(x,y)=>{
    const maxX=Math.max(0,field.clientWidth-card.offsetWidth);
    const maxY=Math.max(0,field.clientHeight-card.offsetHeight);
@@ -820,6 +832,7 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("contextmenu",e=>{
    e.preventDefault();
+   if(!fieldLocked)return;
    openCardMenu(card,menu);
  });
 
@@ -844,6 +857,10 @@ function setupCardInteractions(card,menu,p){
    }
    e.preventDefault();
    closeAllMenus();
+   if(fieldLocked){
+     openCardMenu(card,menu);
+     return;
+   }
    startX=e.clientX;
    startY=e.clientY;
    ox=p.x;
@@ -851,27 +868,18 @@ function setupCardInteractions(card,menu,p){
    dragging=false;
    moved=false;
    card.setPointerCapture(e.pointerId);
-
-   timer=setTimeout(()=>{
-     if(!moved){
-       openCardMenu(card,menu);
-       dragging=false;
-       moved=true;
-       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
-     }
-   },LONG_PRESS_MS);
  });
 
  card.addEventListener("pointermove",e=>{
    if(!card.hasPointerCapture(e.pointerId))return;
    if(menu.style.display==="block")return;
+   if(fieldLocked)return;
    const dx=e.clientX-startX;
    const dy=e.clientY-startY;
    const dist=Math.hypot(dx,dy);
    if(!dragging && dist>MOVE_LIMIT){
      dragging=true;
      moved=true;
-     stopTimer();
      menu.style.display="none";
    }
    if(dragging)setPosition(ox+dx,oy+dy);
@@ -879,7 +887,6 @@ function setupCardInteractions(card,menu,p){
 
  const finish=e=>{
    if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
-   stopTimer();
    if(dragging)save();
    dragging=false;
  };
