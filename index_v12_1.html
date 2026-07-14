@@ -457,7 +457,7 @@ function renderVoteDiffList(){
  const summary=document.querySelector("details.log-panel summary");
  if(summary)summary.textContent="Разные голоса";
  if(!voteFilterId||!people.some(p=>p.id===voteFilterId)){
-   list.innerHTML='<div class="logempty">Свайп вверх по карточке выбирает игрока</div>';
+   list.innerHTML='<div class="logempty">Тап по карточке выбирает игрока</div>';
    return;
  }
  const source=people.find(p=>p.id===voteFilterId);
@@ -640,6 +640,11 @@ function toggleDead(person){
 }
 function closeAllMenus(except){
  document.querySelectorAll(".menu").forEach(m=>{if(m!==except)m.style.display="none";});
+}
+function anyMenuOpen(){
+ if([...document.querySelectorAll(".menu,.role-menu")].some(m=>m.style.display==="block"))return true;
+ const claimMenu=$("blueClaimMenu");
+ return !!claimMenu&&!claimMenu.hidden;
 }
 function openCardMenu(card,menu){
  closeAllMenus(menu);
@@ -994,14 +999,12 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("pointerdown",e=>{
    if(e.button!==0 || e.target.closest(".menu"))return;
+   if(anyMenuOpen())return;
    if(menu.style.display==="block")return;
    if(isVotesWorld()){
      e.preventDefault();
      e.stopPropagation();
-     startX=e.clientX;
-     startY=e.clientY;
-     swipeDone=false;
-     card.setPointerCapture(e.pointerId);
+     setVoteFilter(p);
      return;
    }
    if(selectedLogIndex!=null)return;
@@ -1039,20 +1042,11 @@ function setupCardInteractions(card,menu,p){
 
  card.addEventListener("pointermove",e=>{
    if(!card.hasPointerCapture(e.pointerId))return;
-   if(isVotesWorld()){
-     const dx=e.clientX-startX;
-     const dy=e.clientY-startY;
-     if(!swipeDone&&dy<-SWIPE_LIMIT&&Math.abs(dy)>Math.abs(dx)*1.25){
-       swipeDone=true;
-       setVoteFilter(p);
-       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
-     }
-     return;
-   }
+   if(isVotesWorld())return;
    if(menu.style.display==="block")return;
    const dx=e.clientX-startX;
    const dy=e.clientY-startY;
-   if(!swipeDone&&Math.max(Math.abs(dx),Math.abs(dy))>SWIPE_LIMIT){
+   if(fieldLocked&&!isVotesWorld()&&!swipeDone&&Math.max(Math.abs(dx),Math.abs(dy))>SWIPE_LIMIT){
      if(Math.abs(dy)>Math.abs(dx)*1.25){
        swipeDone=true;
        if(dy<0)startNomination(p);
