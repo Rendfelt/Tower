@@ -175,7 +175,7 @@ input:focus{outline:2px solid rgba(116,221,255,.48);outline-offset:1px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,fieldLocked=false,currentWorld="main",voteFilterId=null,pendingCardPolicyText="",nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],flySourceId=null,selectedLogIndex=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,fieldLocked=false,currentWorld="main",voteFilterId=null,pendingCardPolicyText="",nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],flySourceId=null,flyTargetId=null,selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
@@ -310,8 +310,8 @@ function addConversationLog(sourceId,targetIds){
  save();
  renderLog();
 }
-function addFlyLog(sourceId,targetId){
- logs.push({type:"fly",time:logTime(),sourceId,targetId});
+function addFlyLog(sourceId,targetId,reason){
+ logs.push({type:"fly",time:logTime(),sourceId,targetId,reason});
  if(logs.length>500)logs=logs.slice(-500);
  save();
  renderLog();
@@ -322,7 +322,7 @@ function logText(log){
  if(log.type==="day")return `Новый день ${log.day||""}`.trim();
  if(log.type==="fixed")return log.text||"";
  if(log.type==="conversation")return `${playerName(log.sourceId)} общается с ${(log.targetIds||[]).map(playerName).join(", ")}`;
- if(log.type==="fly")return `${playerName(log.sourceId)} влетает в ${playerName(log.targetId)}`;
+ if(log.type==="fly")return `${playerName(log.sourceId)} влетает в ${playerName(log.targetId)}${log.reason?` (${log.reason})`:""}`;
  if(log.type==="nomination"){
    const source=playerName(log.sourceId);
    const target=playerName(log.targetId);
@@ -595,8 +595,8 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0;fieldLocked=!!d.fieldLocked;currentWorld=d.currentWorld==="votes"?"votes":"main";voteFilterId=d.voteFilterId||null;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];flySourceId=null;pendingCardPolicyText="";normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;blueClaimCount=0;fieldLocked=false;currentWorld="main";voteFilterId=null;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];flySourceId=null;selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0;fieldLocked=!!d.fieldLocked;currentWorld=d.currentWorld==="votes"?"votes":"main";voteFilterId=d.voteFilterId||null;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];flySourceId=null;flyTargetId=null;pendingCardPolicyText="";normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;blueClaimCount=0;fieldLocked=false;currentWorld="main";voteFilterId=null;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];flySourceId=null;flyTargetId=null;selectedLogIndex=null;save();render();}
 function setFieldLocked(enabled){fieldLocked=!!enabled;closeAllMenus();save();render();}
 function nextPersonPosition(){
  const gap=12,cardW=132,cardH=144;
@@ -628,6 +628,7 @@ function deletePerson(person){
  if(conversationSourceId===person.id)conversationSourceId=null;
  conversationTargetIds=conversationTargetIds.filter(id=>id!==person.id);
  if(flySourceId===person.id)flySourceId=null;
+ if(flyTargetId===person.id)flyTargetId=null;
  save();
  render();
 }
@@ -710,6 +711,11 @@ function updateEventHint(){
    eventHint.innerHTML=`${esc(pendingCardPolicyText)}: заявили <button onclick="addCardPolicyLog(0)">0</button> <button onclick="addCardPolicyLog(1)">1</button> <button onclick="addCardPolicyLog(2)">2</button> <button onclick="addCardPolicyLog(3)">3</button> <button onclick="cancelCardPolicy()">Отмена</button>`;
    return;
  }
+ if(flySourceId&&flyTargetId){
+   eventHint.style.display="block";
+   eventHint.innerHTML=`${esc(playerName(flySourceId))} влетает в ${esc(playerName(flyTargetId))}: <button onclick="finishFlyReason('выкладка')">Выкладка</button> <button onclick="finishFlyReason('проверка')">Проверка</button> <button onclick="cancelFlyMode()">Отмена</button>`;
+   return;
+ }
  if(flySourceId){
    eventHint.style.display="block";
    eventHint.innerHTML=`${esc(playerName(flySourceId))} влетает: нажмите на вторую карточку <button onclick="cancelFlyMode()">Отмена</button>`;
@@ -737,6 +743,7 @@ function startNomination(person){
  conversationSourceId=null;
  conversationTargetIds=[];
  flySourceId=null;
+ flyTargetId=null;
  pendingCardPolicyText="";
  closeAllMenus();
  render();
@@ -764,6 +771,7 @@ function cancelCardPolicy(){
 }
 function startFlyMode(person){
  flySourceId=person.id;
+ flyTargetId=null;
  nominationSourceId=null;
  votingTargetId=null;
  votingLogId=null;
@@ -775,16 +783,24 @@ function startFlyMode(person){
 }
 function finishFlyMode(target){
  if(!flySourceId || target.id===flySourceId)return;
+ flyTargetId=target.id;
+ render();
+}
+function finishFlyReason(reason){
+ if(!flySourceId||!flyTargetId)return;
  const source=people.find(p=>p.id===flySourceId);
+ const target=people.find(p=>p.id===flyTargetId);
  if(source)source.color="purple";
- target.color="purple";
- addFlyLog(flySourceId,target.id);
+ if(target)target.color="purple";
+ addFlyLog(flySourceId,flyTargetId,reason);
  flySourceId=null;
+ flyTargetId=null;
  save();
  render();
 }
 function cancelFlyMode(){
  flySourceId=null;
+ flyTargetId=null;
  render();
 }
 function voteForNominee(voter){
@@ -809,6 +825,7 @@ function startConversation(person){
  votingTargetId=null;
  votingLogId=null;
  flySourceId=null;
+ flyTargetId=null;
  pendingCardPolicyText="";
  closeAllMenus();
  render();
@@ -865,7 +882,8 @@ people.forEach(p=>{
  else if(conversationSourceId)card.classList.add("conversation-target");
  if(conversationTargetIds.includes(p.id))card.classList.add("conversation-selected");
  if(p.id===flySourceId)card.classList.add("fly-source");
- else if(flySourceId)card.classList.add("fly-target");
+ else if(p.id===flyTargetId)card.classList.add("fly-target");
+ else if(flySourceId&&!flyTargetId)card.classList.add("fly-target");
  if(p.id===nominationSourceId)card.classList.add("nomination-source");
  else if(nominationSourceId)card.classList.add("nomination-target");
  if(p.id===votingTargetId)card.classList.add("vote-target");
@@ -1008,6 +1026,7 @@ function setupCardInteractions(card,menu,p){
      return;
    }
    if(selectedLogIndex!=null)return;
+   if(flySourceId&&flyTargetId)return;
    if(flySourceId){
      e.preventDefault();
      finishFlyMode(p);
