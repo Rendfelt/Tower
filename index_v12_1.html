@@ -69,17 +69,19 @@ details.panel[open] summary{margin-bottom:8px;border-bottom:1px solid rgba(174,2
 .person b{display:block;margin-bottom:3px}
 .drop{display:none;position:absolute;left:8px;top:34px;background:#fff;border:1px solid #999;padding:8px;z-index:10}
 .drop label{display:block}
-.card{position:absolute;min-width:148px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:10px 11px;touch-action:none;user-select:none;font-family:"Alegreya SC",Georgia,serif;font-size:18px;box-shadow:0 5px 14px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.25);color:#1d1713}
+.card{position:absolute;min-width:148px;min-height:118px;background:#dfefff;border:1px solid #5b7ea5;border-radius:8px;padding:10px 11px;touch-action:none;user-select:none;font-family:"Alegreya SC",Georgia,serif;font-size:18px;box-shadow:0 5px 14px rgba(0,0,0,.42),inset 0 0 0 1px rgba(255,255,255,.25);color:#1d1713}
 .card.color-blue{background:linear-gradient(180deg,#d8f5ff,#8bcbe3);border-color:#4d9fc0}
 .card.color-red{background:linear-gradient(180deg,#f2c6d0,#bb596a);border-color:#873040}
 .card.color-green{background:linear-gradient(180deg,#d5eccb,#78a765);border-color:#4c743b}
 .card.color-yellow{background:linear-gradient(180deg,#fff3bc,#d9bc61);border-color:#9b7a2f}
+.card.color-purple{background:linear-gradient(180deg,#ead8ff,#a46bd5);border-color:#6a3d98}
 .card.dead{background:linear-gradient(180deg,#c7c2b7,#7e7770);border-color:#3f3936;color:#2e2b28;box-shadow:0 3px 9px rgba(0,0,0,.35)}
 .card.nomination-source{background:linear-gradient(180deg,#f4dda2,#c69a36);border-color:#7f5515}
 .card.nomination-target{cursor:pointer;box-shadow:0 0 0 2px rgba(11,107,47,.35)}
 .card.conversation-source{background:linear-gradient(180deg,#d7edff,#78a9d8);border-color:#3b6f9c}
 .card.conversation-target{cursor:pointer;box-shadow:0 0 0 2px rgba(83,180,255,.4)}
 .card.conversation-selected{box-shadow:0 0 0 3px rgba(255,208,51,.85),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
+.card.fly-source,.card.fly-target{background:linear-gradient(180deg,#ead8ff,#a46bd5);border-color:#6a3d98;box-shadow:0 0 0 3px rgba(194,144,255,.78),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .card.vote-target{background:linear-gradient(180deg,#ffe98f,#d18b1f);border-color:#fff3a8;box-shadow:0 0 0 3px rgba(255,232,120,.8),0 8px 22px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.35)}
 .card.vote-voter{cursor:pointer;box-shadow:0 0 0 2px rgba(169,68,68,.35)}
 .card.vote-done{cursor:default;opacity:.75}
@@ -173,12 +175,12 @@ input:focus{outline:2px solid rgba(116,221,255,.48);outline-offset:1px}
 
 <script>
 const KEY="mafia-demo-state";
-let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,fieldLocked=false,currentWorld="main",voteFilterId=null,pendingCardPolicyText="",nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],selectedLogIndex=null;
+let people=[],roles=[],logs=[],pid=1,rid=1,dayNumber=0,blueClaimCount=0,fieldLocked=false,currentWorld="main",voteFilterId=null,pendingCardPolicyText="",nominationSourceId=null,votingTargetId=null,votingLogId=null,conversationSourceId=null,conversationTargetIds=[],flySourceId=null,selectedLogIndex=null;
 const $=id=>document.getElementById(id);
 const rn=id=>roles.find(r=>r.id===id)?.name||"?";
 const rc=id=>people.filter(p=>p.roles.includes(id) && !roleIsCrossed(p,id)).length;
 const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
-function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow"].includes(p.color)?p.color:"blue";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
+function normalizePeople(){people.forEach(p=>{p.roles=p.roles||[];p.dead=!!p.dead;p.color=["blue","red","green","yellow","purple"].includes(p.color)?p.color:"blue";p.confirmedRoles=(p.confirmedRoles||[]).filter(id=>p.roles.includes(id));});}
 function roleConfirmedByOther(person,id){return people.some(p=>p.id!==person.id && (p.confirmedRoles||[]).includes(id));}
 function roleIsConfirmed(id){return people.some(p=>(p.confirmedRoles||[]).includes(id));}
 function roleIsCrossed(person,id){
@@ -279,6 +281,19 @@ function addCardPolicyLog(count){
  blueClaimCount+=count;
  addGovernmentFixedLog(`${pendingCardPolicyText}, заявили ${count} ${blueClaimWord(count)} (${blueClaimCount})`);
  pendingCardPolicyText="";
+ render();
+}
+function startSwipeCardPolicy(text){
+ if(isVotesWorld())return;
+ closeAllMenus();
+ pendingCardPolicyText=text;
+ nominationSourceId=null;
+ votingTargetId=null;
+ votingLogId=null;
+ conversationSourceId=null;
+ conversationTargetIds=[];
+ flySourceId=null;
+ render();
 }
 function addNominationLog(sourceId,targetId){
  const electorateIds=people.filter(p=>!p.dead).map(p=>p.id);
@@ -295,12 +310,19 @@ function addConversationLog(sourceId,targetIds){
  save();
  renderLog();
 }
+function addFlyLog(sourceId,targetId){
+ logs.push({type:"fly",time:logTime(),sourceId,targetId});
+ if(logs.length>500)logs=logs.slice(-500);
+ save();
+ renderLog();
+}
 function logText(log){
  if(log.type==="custom")return log.text||"";
  if(log.type==="death")return `${playerName(log.playerId)} ${log.dead?"умирает":"оживает"}`;
  if(log.type==="day")return `Новый день ${log.day||""}`.trim();
  if(log.type==="fixed")return log.text||"";
  if(log.type==="conversation")return `${playerName(log.sourceId)} общается с ${(log.targetIds||[]).map(playerName).join(", ")}`;
+ if(log.type==="fly")return `${playerName(log.sourceId)} влетает в ${playerName(log.targetId)}`;
  if(log.type==="nomination"){
    const source=playerName(log.sourceId);
    const target=playerName(log.targetId);
@@ -318,6 +340,7 @@ function logPlayers(log){
  if(log.type==="custom")return [...new Set([...(log.playerIds||[]),...mentioned])];
  if(log.type==="death")return [log.playerId].filter(id=>id!=null);
  if(log.type==="conversation")return [log.sourceId,...(log.targetIds||[])].filter(id=>id!=null);
+ if(log.type==="fly")return [log.sourceId,log.targetId].filter(id=>id!=null);
  if(log.type==="nomination")return [log.sourceId,log.targetId,...(log.votes||[]),...(log.electorateIds||[])].filter(id=>id!=null);
  return mentioned;
 }
@@ -572,11 +595,11 @@ async function exportJson(){
  URL.revokeObjectURL(a.href);
 }
 function openImport(){imp.value="";imp.click();}
-imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0;fieldLocked=!!d.fieldLocked;currentWorld=d.currentWorld==="votes"?"votes":"main";voteFilterId=d.voteFilterId||null;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];normalizePeople();save();imp.value="";render();};r.readAsText(f);};
-function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;blueClaimCount=0;fieldLocked=false;currentWorld="main";voteFilterId=null;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];selectedLogIndex=null;save();render();}
+imp.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let d=JSON.parse(r.result);people=d.people||[];roles=d.roles||[];logs=d.logs||[];pid=d.pid||1;rid=d.rid||1;dayNumber=Number.isFinite(d.dayNumber)?d.dayNumber:logs.filter(l=>l.type==="day").length;blueClaimCount=Number.isFinite(d.blueClaimCount)?d.blueClaimCount:0;fieldLocked=!!d.fieldLocked;currentWorld=d.currentWorld==="votes"?"votes":"main";voteFilterId=d.voteFilterId||null;selectedLogIndex=null;conversationSourceId=null;conversationTargetIds=[];flySourceId=null;pendingCardPolicyText="";normalizePeople();save();imp.value="";render();};r.readAsText(f);};
+function resetState(){if(!confirm("Полностью удалить все данные?"))return;people=[];roles=[];logs=[];pid=1;rid=1;dayNumber=0;blueClaimCount=0;fieldLocked=false;currentWorld="main";voteFilterId=null;nominationSourceId=null;votingTargetId=null;votingLogId=null;conversationSourceId=null;conversationTargetIds=[];flySourceId=null;selectedLogIndex=null;save();render();}
 function setFieldLocked(enabled){fieldLocked=!!enabled;closeAllMenus();save();render();}
 function nextPersonPosition(){
- const gap=12,cardW=132,cardH=72;
+ const gap=12,cardW=132,cardH=144;
  const width=field?.clientWidth||800;
  const cols=Math.max(1,Math.floor((width-gap)/(cardW+gap)));
  const i=people.length;
@@ -604,6 +627,7 @@ function deletePerson(person){
  if(votingTargetId===person.id){votingTargetId=null;votingLogId=null;}
  if(conversationSourceId===person.id)conversationSourceId=null;
  conversationTargetIds=conversationTargetIds.filter(id=>id!==person.id);
+ if(flySourceId===person.id)flySourceId=null;
  save();
  render();
 }
@@ -676,6 +700,16 @@ function currentVotes(){
 function updateEventHint(){
  if(!window.eventHint)return;
  if(isVotesWorld()){eventHint.style.display="none";eventHint.innerHTML="";return;}
+ if(pendingCardPolicyText){
+   eventHint.style.display="block";
+   eventHint.innerHTML=`${esc(pendingCardPolicyText)}: заявили <button onclick="addCardPolicyLog(0)">0</button> <button onclick="addCardPolicyLog(1)">1</button> <button onclick="addCardPolicyLog(2)">2</button> <button onclick="addCardPolicyLog(3)">3</button> <button onclick="cancelCardPolicy()">Отмена</button>`;
+   return;
+ }
+ if(flySourceId){
+   eventHint.style.display="block";
+   eventHint.innerHTML=`${esc(playerName(flySourceId))} влетает: нажмите на вторую карточку <button onclick="cancelFlyMode()">Отмена</button>`;
+   return;
+ }
  if(conversationSourceId){
    eventHint.style.display="block";
    const targets=conversationTargetIds.map(playerName).join(", ")||"никого";
@@ -697,6 +731,8 @@ function startNomination(person){
  votingLogId=null;
  conversationSourceId=null;
  conversationTargetIds=[];
+ flySourceId=null;
+ pendingCardPolicyText="";
  closeAllMenus();
  render();
 }
@@ -715,6 +751,35 @@ function finishNomination(target){
 function cancelVoting(){
  votingTargetId=null;
  votingLogId=null;
+ render();
+}
+function cancelCardPolicy(){
+ pendingCardPolicyText="";
+ render();
+}
+function startFlyMode(person){
+ flySourceId=person.id;
+ nominationSourceId=null;
+ votingTargetId=null;
+ votingLogId=null;
+ conversationSourceId=null;
+ conversationTargetIds=[];
+ pendingCardPolicyText="";
+ closeAllMenus();
+ render();
+}
+function finishFlyMode(target){
+ if(!flySourceId || target.id===flySourceId)return;
+ const source=people.find(p=>p.id===flySourceId);
+ if(source)source.color="purple";
+ target.color="purple";
+ addFlyLog(flySourceId,target.id);
+ flySourceId=null;
+ save();
+ render();
+}
+function cancelFlyMode(){
+ flySourceId=null;
  render();
 }
 function voteForNominee(voter){
@@ -738,6 +803,8 @@ function startConversation(person){
  nominationSourceId=null;
  votingTargetId=null;
  votingLogId=null;
+ flySourceId=null;
+ pendingCardPolicyText="";
  closeAllMenus();
  render();
 }
@@ -792,6 +859,8 @@ people.forEach(p=>{
  if(p.id===conversationSourceId)card.classList.add("conversation-source");
  else if(conversationSourceId)card.classList.add("conversation-target");
  if(conversationTargetIds.includes(p.id))card.classList.add("conversation-selected");
+ if(p.id===flySourceId)card.classList.add("fly-source");
+ else if(flySourceId)card.classList.add("fly-target");
  if(p.id===nominationSourceId)card.classList.add("nomination-source");
  else if(nominationSourceId)card.classList.add("nomination-target");
  if(p.id===votingTargetId)card.classList.add("vote-target");
@@ -801,8 +870,8 @@ people.forEach(p=>{
    card.classList.add("log-highlighted");
    card.style.setProperty("--log-rings",ringShadow(selectedRings.get(p.id)));
  }
- p.x=Math.min(Math.max(0,p.x||0),Math.max(0,field.clientWidth-120));
- p.y=Math.min(Math.max(0,p.y||0),Math.max(0,field.clientHeight-60));
+ p.x=Math.min(Math.max(0,p.x||0),Math.max(0,field.clientWidth-150));
+ p.y=Math.min(Math.max(0,p.y||0),Math.max(0,field.clientHeight-120));
  card.style.left=p.x+"px";card.style.top=p.y+"px";
  card.innerHTML=cardHtml(p,votes);
  if(isVotesWorld()&&p.id!==voteFilterId&&voteDiff>0)card.querySelector("b")?.insertAdjacentHTML("afterend",`<div class="vote-diff-score">${voteDiff}</div>`);
@@ -846,7 +915,7 @@ function setPlayerColor(person,color){
 
 function openColorEditor(person,menu){
  menu.innerHTML="";
- [["blue","Базовый"],["red","Красный"],["green","Зеленый"],["yellow","Желтый"]].forEach(([color,title])=>{
+ [["blue","Базовый"],["red","Красный"],["green","Зеленый"],["yellow","Желтый"],["purple","Фиолетовый"]].forEach(([color,title])=>{
    let b=document.createElement("button");
    b.textContent=(person.color===color?"✓ ":"")+title;
    b.onclick=()=>setPlayerColor(person,color);
@@ -904,7 +973,7 @@ function openConfirmedRoleEditor(person,menu,mode){
 function setupCardInteractions(card,menu,p){
  const MOVE_LIMIT=8;
  const SWIPE_LIMIT=42;
- let dragging=false,moved=false,voteSwipeDone=false,startX=0,startY=0,ox=0,oy=0;
+ let dragging=false,moved=false,swipeDone=false,startX=0,startY=0,ox=0,oy=0;
 
  const setPosition=(x,y)=>{
    const maxX=Math.max(0,field.clientWidth-card.offsetWidth);
@@ -931,11 +1000,16 @@ function setupCardInteractions(card,menu,p){
      e.stopPropagation();
      startX=e.clientX;
      startY=e.clientY;
-     voteSwipeDone=false;
+     swipeDone=false;
      card.setPointerCapture(e.pointerId);
      return;
    }
    if(selectedLogIndex!=null)return;
+   if(flySourceId){
+     e.preventDefault();
+     finishFlyMode(p);
+     return;
+   }
    if(conversationSourceId){
      e.preventDefault();
      toggleConversationTarget(p);
@@ -953,17 +1027,13 @@ function setupCardInteractions(card,menu,p){
    }
    e.preventDefault();
    closeAllMenus();
-   if(fieldLocked){
-     e.stopPropagation();
-     openCardMenu(card,menu);
-     return;
-   }
    startX=e.clientX;
    startY=e.clientY;
    ox=p.x;
    oy=p.y;
    dragging=false;
    moved=false;
+   swipeDone=false;
    card.setPointerCapture(e.pointerId);
  });
 
@@ -972,17 +1042,32 @@ function setupCardInteractions(card,menu,p){
    if(isVotesWorld()){
      const dx=e.clientX-startX;
      const dy=e.clientY-startY;
-     if(!voteSwipeDone&&dy<-SWIPE_LIMIT&&Math.abs(dy)>Math.abs(dx)*1.25){
-       voteSwipeDone=true;
+     if(!swipeDone&&dy<-SWIPE_LIMIT&&Math.abs(dy)>Math.abs(dx)*1.25){
+       swipeDone=true;
        setVoteFilter(p);
        if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
      }
      return;
    }
    if(menu.style.display==="block")return;
-   if(fieldLocked)return;
    const dx=e.clientX-startX;
    const dy=e.clientY-startY;
+   if(!swipeDone&&Math.max(Math.abs(dx),Math.abs(dy))>SWIPE_LIMIT){
+     if(Math.abs(dy)>Math.abs(dx)*1.25){
+       swipeDone=true;
+       if(dy<0)startNomination(p);
+       else startFlyMode(p);
+     }else if(Math.abs(dx)>Math.abs(dy)*1.25){
+       swipeDone=true;
+       startSwipeCardPolicy(dx<0?"выложили красную":"выложили синюю");
+     }
+     if(swipeDone){
+       dragging=false;
+       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
+       return;
+     }
+   }
+   if(fieldLocked)return;
    const dist=Math.hypot(dx,dy);
    if(!dragging && dist>MOVE_LIMIT){
      dragging=true;
@@ -993,6 +1078,11 @@ function setupCardInteractions(card,menu,p){
  });
 
  const finish=e=>{
+   if(fieldLocked&&!dragging&&!swipeDone&&!isVotesWorld()&&!flySourceId&&!nominationSourceId&&!votingTargetId&&!conversationSourceId&&selectedLogIndex==null){
+     e.preventDefault();
+     e.stopPropagation();
+     openCardMenu(card,menu);
+   }
    if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
    if(dragging)save();
    dragging=false;
