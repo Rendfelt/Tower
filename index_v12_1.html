@@ -1130,7 +1130,7 @@ function setupCardInteractions(card,menu,p){
      }
      if(swipeDone){
        dragging=false;
-       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
+       if(!queuedCardPolicy&&card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
        return;
      }
    }
