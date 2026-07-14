@@ -1049,7 +1049,7 @@ function openConfirmedRoleEditor(person,menu,mode){
 function setupCardInteractions(card,menu,p){
  const MOVE_LIMIT=8;
  const SWIPE_LIMIT=42;
- let dragging=false,moved=false,swipeDone=false,startX=0,startY=0,ox=0,oy=0;
+ let dragging=false,moved=false,swipeDone=false,queuedCardPolicy="",startX=0,startY=0,ox=0,oy=0;
 
  const setPosition=(x,y)=>{
    const maxX=Math.max(0,field.clientWidth-card.offsetWidth);
@@ -1109,6 +1109,7 @@ function setupCardInteractions(card,menu,p){
    dragging=false;
    moved=false;
    swipeDone=false;
+   queuedCardPolicy="";
    card.setPointerCapture(e.pointerId);
  });
 
@@ -1125,8 +1126,7 @@ function setupCardInteractions(card,menu,p){
        else startFlyMode(p);
      }else if(Math.abs(dx)>Math.abs(dy)*1.25){
        swipeDone=true;
-       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
-       startSwipeCardPolicy(dx<0?"выложили красную":"выложили синюю");
+       queuedCardPolicy=dx<0?"выложили красную":"выложили синюю";
      }
      if(swipeDone){
        dragging=false;
@@ -1145,6 +1145,16 @@ function setupCardInteractions(card,menu,p){
  });
 
  const finish=e=>{
+   if(queuedCardPolicy){
+     e.preventDefault();
+     e.stopPropagation();
+     const text=queuedCardPolicy;
+     queuedCardPolicy="";
+     if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
+     startSwipeCardPolicy(text);
+     dragging=false;
+     return;
+   }
    if(fieldLocked&&!dragging&&!swipeDone&&!isVotesWorld()&&!flySourceId&&!nominationSourceId&&!votingTargetId&&!conversationSourceId&&selectedLogIndex==null){
      e.preventDefault();
      e.stopPropagation();
