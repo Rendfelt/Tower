@@ -280,6 +280,17 @@ function addCardPolicyLog(count){
  pendingCardPolicyText="";
  render();
 }
+function openClaimSelect(){
+ const select=$("claimCountSelect");
+ if(!select)return;
+ select.focus();
+ try{
+   if(select.showPicker)select.showPicker();
+   else select.click();
+ }catch{
+   select.click();
+ }
+}
 function startSwipeCardPolicy(text){
  if(isVotesWorld())return;
  closeAllMenus();
@@ -291,6 +302,7 @@ function startSwipeCardPolicy(text){
  conversationTargetIds=[];
  flySourceId=null;
  render();
+ openClaimSelect();
 }
 function addNominationLog(sourceId,targetId){
  const electorateIds=people.filter(p=>!p.dead).map(p=>p.id);
@@ -723,7 +735,7 @@ function updateEventHint(){
  if(isVotesWorld()){eventHint.style.display="none";eventHint.innerHTML="";return;}
  if(pendingCardPolicyText){
    eventHint.style.display="block";
-   eventHint.innerHTML=`${esc(pendingCardPolicyText)}: <select class="claim-select" onchange="if(this.value!=='')addCardPolicyLog(+this.value)"><option value="">Заявили</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select> <button onclick="cancelCardPolicy()">Отмена</button>`;
+   eventHint.innerHTML=`${esc(pendingCardPolicyText)}: <select id="claimCountSelect" class="claim-select" onchange="if(this.value!=='')addCardPolicyLog(+this.value)"><option value="">Заявили</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select> <button onclick="cancelCardPolicy()">Отмена</button>`;
    return;
  }
  if(flySourceId&&flyTargetId){
@@ -1113,6 +1125,7 @@ function setupCardInteractions(card,menu,p){
        else startFlyMode(p);
      }else if(Math.abs(dx)>Math.abs(dy)*1.25){
        swipeDone=true;
+       if(card.hasPointerCapture(e.pointerId))card.releasePointerCapture(e.pointerId);
        startSwipeCardPolicy(dx<0?"выложили красную":"выложили синюю");
      }
      if(swipeDone){
